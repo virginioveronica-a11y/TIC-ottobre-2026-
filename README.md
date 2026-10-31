@@ -1,1 +1,0 @@
-# TIC-ottobre-2026-
