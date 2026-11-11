@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VerbaMaster 3.0 Ultra - Grammatica & Analisi per la 2ª Media</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyberDark: '#0B0F19',
+                        cyberCard: '#151C2C',
+                        cyberBorder: '#232D45',
+                        neonPurple: '#A855F7',
+                        neonPink: '#EC4899',
+                        neonBlue: '#3B82F6',
+                        neonCyan: '#06B6D4',
+                        neonGreen: '#10B981',
+                        neonYellow: '#F59E0B',
+                        neonRed: '#EF4444'
+                    },
+                    fontFamily: {
+                        heading: ['Fredoka', 'sans-serif'],
+                        body: ['Plus Jakarta Sans', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0B0F19;
+            color: #F3F4F6;
+        }
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Fredoka', sans-serif;
+        }
+        .neon-glow-purple {
+            box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.4);
+        }
+        .neon-glow-cyan {
+            box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.4);
+        }
+        .neon-glow-green {
+            box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.4);
+        }
+        .neon-border-glow:hover {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+        }
+        .btn-bounce {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-bounce:hover {
+            transform: translateY(-3px) scale(1.02);
+        }
+        .btn-bounce:active {
+            transform: translateY(0) scale(0.98);
+        }
+        .glass-panel {
+            background: rgba(21, 28, 44, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #232D45;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A855F7;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+            .glass-panel { background: white !important; border: 1px solid #ccc !important; color: black !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-neonPink selection:text-white">
+
+    <!-- TOP NAVIGATION NAVBAR -->
+    <header id="main-header" class="hidden sticky top-0 z-50 glass-panel border-b border-cyberBorder no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchSection('dashboard')">
+                <div class="w-11 h-11 bg-gradient-to-tr from-neonPurple to-neonPink rounded-2xl flex items-center justify-center text-xl font-bold text-white shadow-lg transform -rotate-3">
+                    <i class="fa-solid fa-gamepad"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white leading-none tracking-wide">Verba<span class="text-neonCyan">Master</span> <span class="text-xs bg-neonPink/20 text-neonPink px-2 py-0.5 rounded-full border border-neonPink/30 font-extrabold">3.0</span></h1>
+                    <p class="text-[11px] text-slate-400 font-semibold">2ª Media • Grammatica & Analisi</p>
+                </div>
+            </div>
+
+            <!-- Header Nav Links -->
+            <nav class="hidden lg:flex items-center space-x-2">
+                <button onclick="switchSection('dashboard')" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-cyberCard transition">
+                    <i class="fa-solid fa-house mr-1.5 text-neonCyan"></i> Home
+                </button>
+                <button onclick="switchSection('ripasso')" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-cyberCard transition">
+                    <i class="fa-solid fa-book-open mr-1.5 text-neonPurple"></i> Ripasso Teoria
+                </button>
+                <button onclick="switchSection('analisi')" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-cyberCard transition">
+                    <i class="fa-solid fa-microscope mr-1.5 text-neonYellow"></i> Lab Analisi
+                </button>
+                <button onclick="switchSection('giochi')" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-cyberCard transition">
+                    <i class="fa-solid fa-trophy mr-1.5 text-neonGreen"></i> Giochi Arcade
+                </button>
+            </nav>
+
+            <!-- User Stats Pill -->
+            <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-2 bg-amber-500/10 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-xl text-sm font-bold">
+                    <i class="fa-solid fa-bolt text-amber-400"></i>
+                    <span id="user-exp">0</span> <span class="hidden sm:inline text-xs text-amber-500">EXP</span>
+                </div>
+
+                <div class="flex items-center space-x-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-sm font-bold">
+                    <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                    <span id="user-level-badge">Liv. 1</span>
+                </div>
+
+                <div class="flex items-center space-x-2 bg-cyberCard p-1.5 pr-3 rounded-xl border border-cyberBorder">
+                    <div id="header-avatar" class="w-8 h-8 bg-gradient-to-br from-neonBlue to-neonCyan text-white rounded-lg flex items-center justify-center font-bold text-base">
+                        🦊
+                    </div>
+                    <span id="header-user-name" class="font-bold text-slate-200 text-sm hidden sm:inline">Studente</span>
+                </div>
+
+                <button onclick="switchSection('report')" class="bg-gradient-to-r from-neonPink to-neonRed hover:opacity-90 text-white px-3.5 py-2 rounded-xl font-bold text-sm flex items-center space-x-1.5 shadow-lg btn-bounce">
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span class="hidden sm:inline">Report Docente</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WRAPPER CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-8">
+
+        <!-- 1. schermata LOGIN -->
+        <section id="screen-login" class="max-w-xl mx-auto my-6 sm:my-10">
+            <div class="glass-panel rounded-3xl p-6 sm:p-10 border border-cyberBorder text-center relative overflow-hidden neon-glow-purple">
+                <div class="absolute -top-24 -right-24 w-48 h-48 bg-neonPurple/20 rounded-full blur-3xl"></div>
+                <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-neonCyan/20 rounded-full blur-3xl"></div>
+
+                <div class="w-24 h-24 bg-gradient-to-tr from-neonPurple via-neonPink to-neonCyan text-white rounded-3xl mx-auto flex items-center justify-center text-5xl shadow-2xl mb-6 transform -rotate-6 border border-white/20">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-2 tracking-wide">Benvenuto in VerbaMaster!</h2>
+                <p class="text-slate-400 text-sm mb-8">Piattaforma di ripasso interattivo e sfida arcade di grammatica per la 2ª Media.</p>
+
+                <form id="login-form" onsubmit="handleLogin(event)" class="space-y-5 text-left">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Nome Studente</label>
+                            <input type="text" id="input-nome" required placeholder="Es. Alessandro" class="w-full px-4 py-3 rounded-xl bg-cyberDark border border-cyberBorder text-white focus:ring-2 focus:ring-neonCyan focus:border-neonCyan outline-none transition font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Cognome Studente</label>
+                            <input type="text" id="input-cognome" required placeholder="Es. Bianchi" class="w-full px-4 py-3 rounded-xl bg-cyberDark border border-cyberBorder text-white focus:ring-2 focus:ring-neonCyan focus:border-neonCyan outline-none transition font-semibold">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Seleziona la tua Classe (dalla 2ªA alla 2ªG)</label>
+                        <select id="input-classe" required class="w-full px-4 py-3 rounded-xl bg-cyberDark border border-cyberBorder text-white focus:ring-2 focus:ring-neonCyan focus:border-neonCyan outline-none transition font-semibold">
+                            <option value="" disabled selected>Scegli la sezione...</option>
+                            <option value="2ª A">Classe 2ª A</option>
+                            <option value="2ª B">Classe 2ª B</option>
+                            <option value="2ª C">Classe 2ª C</option>
+                            <option value="2ª D">Classe 2ª D</option>
+                            <option value="2ª E">Classe 2ª E</option>
+                            <option value="2ª F">Classe 2ª F</option>
+                            <option value="2ª G">Classe 2ª G</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Scegli il tuo Avatar Cyber</label>
+                        <div class="grid grid-cols-5 sm:grid-cols-10 gap-2" id="avatar-selector">
+                            <!-- Popolato via JS -->
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-4 bg-gradient-to-r from-neonGreen to-neonCyan hover:opacity-90 text-cyberDark font-extrabold text-lg rounded-2xl shadow-xl shadow-neonGreen/20 transition btn-bounce mt-4 flex items-center justify-center space-x-2">
+                        <span>ENTRA NELL'ARENA</span>
+                        <i class="fa-solid fa-bolt"></i>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 2. DASHBOARD MAIN HUB -->
+        <section id="screen-dashboard" class="hidden space-y-8">
+            <!-- Hero Banner -->
+            <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyberBorder text-white relative overflow-hidden flex flex-col lg:flex-row items-center justify-between">
+                <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-neonPurple/10 rounded-full blur-3xl"></div>
+                
+                <div class="relative z-10 max-w-2xl text-center lg:text-left mb-6 lg:mb-0">
+                    <span class="bg-neonPurple/20 text-neonPurple border border-neonPurple/30 text-xs px-3 py-1 rounded-full font-extrabold uppercase tracking-wider mb-3 inline-block">Anno Scolastico 2023/2024</span>
+                    <h2 class="text-3xl sm:text-5xl font-extrabold mb-3 leading-tight">Pronto alla sfida, <span id="dash-user-name" class="text-transparent bg-clip-text bg-gradient-to-r from-neonCyan via-neonPurple to-neonPink">Studente</span>?</h2>
+                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">Padroneggia tutti i tempi verbali, la transitività, le forme attive/passive/riflessive e l'analisi grammaticale completa di ogni parte del discorso.</p>
+                </div>
+
+                <div class="relative z-10 flex items-center space-x-4 bg-cyberDark/80 p-5 rounded-2xl border border-cyberBorder">
+                    <div id="dash-avatar" class="w-20 h-20 bg-gradient-to-tr from-neonPurple to-neonCyan rounded-2xl flex items-center justify-center text-4xl shadow-lg">
+                        🦊
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Grado Grammaticale</div>
+                        <div id="dash-level-title" class="text-xl font-extrabold text-neonCyan">Novizio del Verbo</div>
+                        <div class="w-44 bg-cyberBorder h-3 rounded-full mt-2 overflow-hidden p-0.5">
+                            <div id="dash-level-bar" class="bg-gradient-to-r from-neonGreen to-neonCyan h-full rounded-full w-1/5 transition-all duration-500"></div>
+                        </div>
+                        <div class="text-[11px] text-slate-400 mt-1"><span id="dash-exp-val">0</span> / 150 EXP per il prossimo livello</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scelta Modalità principali (Grid 3 Colonne) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Sezione Ripasso Teoria -->
+                <div onclick="switchSection('ripasso')" class="glass-panel hover:border-neonPurple rounded-3xl p-7 cursor-pointer transition btn-bounce border border-cyberBorder group relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 bg-neonPurple/20 text-neonPurple rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 border border-neonPurple/30 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-book-open"></i>
+                        </div>
+                        <span class="text-xs font-bold text-neonPurple uppercase tracking-wider">Enciclopedia Teorica</span>
+                        <h3 class="text-2xl font-bold text-white mt-1 mb-2">Ripasso Specifico</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6">Mappe chiare su Modi Finiti/Indefiniti, Transitivi vs Intransitivi, Attivi/Passivi/Riflessivi, Verbi Speciali e Guida alle 9 Parti del Discorso.</p>
+                    </div>
+                    <div class="flex items-center text-neonPurple font-bold text-sm">
+                        <span>Apri le Schede Teoriche</span>
+                        <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition"></i>
+                    </div>
+                </div>
+
+                <!-- Sezione Laboratorio Analisi -->
+                <div onclick="switchSection('analisi')" class="glass-panel hover:border-neonYellow rounded-3xl p-7 cursor-pointer transition btn-bounce border border-cyberBorder group relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 bg-neonYellow/20 text-neonYellow rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 border border-neonYellow/30 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-microscope"></i>
+                        </div>
+                        <span class="text-xs font-bold text-neonYellow uppercase tracking-wider">Sezione Dedicata</span>
+                        <h3 class="text-2xl font-bold text-white mt-1 mb-2">Lab Analisi Grammaticale</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6">Analisi completa parola per parola (Nomi, Verbi, Aggettivi, Articoli, Avverbi...) e modalità "Caccia all'Errore nell'Analisi".</p>
+                    </div>
+                    <div class="flex items-center text-neonYellow font-bold text-sm">
+                        <span>Entra nel Laboratorio</span>
+                        <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition"></i>
+                    </div>
+                </div>
+
+                <!-- Sezione Giochi Arcade -->
+                <div onclick="switchSection('giochi')" class="glass-panel hover:border-neonGreen rounded-3xl p-7 cursor-pointer transition btn-bounce border border-cyberBorder group relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 bg-neonGreen/20 text-neonGreen rounded-2xl flex items-center justify-center text-2xl font-bold mb-4 border border-neonGreen/30 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-gamepad"></i>
+                        </div>
+                        <span class="text-xs font-bold text-neonGreen uppercase tracking-wider">4 Modalità Arcade</span>
+                        <h3 class="text-2xl font-bold text-white mt-1 mb-2">Sfide & Giochi</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6">Sfida a tempo con combo multiplier, Smista-Parole Drag/Click, Cacciatore di Errori e Speed Duel sulle parti del discorso.</p>
+                    </div>
+                    <div class="flex items-center text-neonGreen font-bold text-sm">
+                        <span>Gioca e Accumula EXP</span>
+                        <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Griglia Badge / Trofei -->
+            <div class="glass-panel rounded-3xl p-6 border border-cyberBorder">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center">
+                    <i class="fa-solid fa-award text-neonYellow mr-2.5"></i>
+                    Obiettivi & Medaglie Sbloccabili
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4" id="badges-container">
+                    <!-- Popolato via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. SEZIONE RIPASSO AMPLIATA (TEORIA DETTAGLIATA) -->
+        <section id="screen-ripasso" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <button onclick="switchSection('dashboard')" class="text-slate-400 hover:text-white font-bold text-sm flex items-center transition">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Torna al Menu Principale
+                </button>
+                <h2 class="text-2xl font-extrabold text-white">Ripasso Grammaticale Avanzato</h2>
+            </div>
+
+            <!-- Navigazione Tab Teoria (Scrollabile su mobile) -->
+            <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-thin border-b border-cyberBorder" id="theory-tabs">
+                <button onclick="showTheoryTab('modi-finiti')" id="tab-modi-finiti" class="tab-btn active bg-neonPurple text-white px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition">Modi Finiti & Tempi</button>
+                <button onclick="showTheoryTab('modi-indefiniti')" id="tab-modi-indefiniti" class="tab-btn bg-cyberCard text-slate-400 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition">Modi Indefiniti</button>
+                <button onclick="showTheoryTab('transitivi')" id="tab-transitivi" class="tab-btn bg-cyberCard text-slate-400 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition">Transitivo / Intransitivo</button>
+                <button onclick="showTheoryTab('forme')" id="tab-forme" class="tab-btn bg-cyberCard text-slate-400 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition">Attiva, Passiva, Riflessiva</button>
+                <button onclick="showTheoryTab('speciali')" id="tab-speciali" class="tab-btn bg-cyberCard text-slate-400 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition">Servili, Fraseologici & Altri</button>
+                <button onclick="showTheoryTab('9parti')" id="tab-9parti" class="tab-btn bg-cyberCard text-slate-400 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition">Guida 9 Parti del Discorso</button>
+            </div>
+
+            <!-- TAB 1: MODI FINITI -->
+            <div id="theory-content-modi-finiti" class="theory-content space-y-6">
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyberBorder">
+                    <h3 class="text-xl font-bold text-neonPurple mb-4 flex items-center">
+                        <i class="fa-solid fa-clock mr-2.5"></i> Modi Finiti (Indicativo, Congiuntivo, Condizionale, Imperativo)
+                    </h3>
+                    <p class="text-sm text-slate-300 mb-6">I modi finiti hanno sempre una <strong>persona grammaticale</strong> (1ª, 2ª, 3ª singolare/plurale). Si dividono in tempi <em>semplici</em> (1 sola parola) e <em>composti</em> (ausiliare essere/avere + participio passato).</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- INDICATIVO -->
+                        <div class="bg-cyberDark p-5 rounded-2xl border border-cyberBorder">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-extrabold text-neonCyan text-lg">INDICATIVO (Modo della Realtà)</h4>
+                                <span class="bg-neonCyan/20 text-neonCyan text-xs px-2.5 py-1 rounded-full font-bold">8 Tempi</span>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">Tempi Semplici:</strong>
+                                    <ul class="list-disc list-inside text-slate-300 mt-1">
+                                        <li><strong>Presente:</strong> io canto</li>
+                                        <li><strong>Imperfetto:</strong> io cantavo</li>
+                                        <li><strong>Passato Remoto:</strong> io cantai</li>
+                                        <li><strong>Futuro Semplice:</strong> io canterò</li>
+                                    </ul>
+                                </div>
+                                <div class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">Tempi Composti:</strong>
+                                    <ul class="list-disc list-inside text-slate-300 mt-1">
+                                        <li><strong>Passato Prossimo:</strong> io ho cantato</li>
+                                        <li><strong>Trapassato Prossimo:</strong> io avevo cantato</li>
+                                        <li><strong>Trapassato Remoto:</strong> io ebbi cantato</li>
+                                        <li><strong>Futuro Anteriore:</strong> io avrò cantato</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CONGIUNTIVO, CONDIZIONALE, IMPERATIVO -->
+                        <div class="space-y-4">
+                            <div class="bg-cyberDark p-4 rounded-2xl border border-cyberBorder">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-neonPurple text-base">CONGIUNTIVO (Dubbio, Desiderio)</h4>
+                                    <span class="bg-neonPurple/20 text-neonPurple text-xs px-2 py-0.5 rounded-full font-bold">4 Tempi</span>
+                                </div>
+                                <p class="text-xs text-slate-300"><strong>Semplici:</strong> Presente <em>(che io canti)</em>, Imperfetto <em>(che io cantassi)</em></p>
+                                <p class="text-xs text-slate-300 mt-1"><strong>Composti:</strong> Passato <em>(che io abbia cantato)</em>, Trapassato <em>(che io avessi cantato)</em></p>
+                            </div>
+
+                            <div class="bg-cyberDark p-4 rounded-2xl border border-cyberBorder">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-neonPink text-base">CONDIZIONALE (Ipotesi, Condizione)</h4>
+                                    <span class="bg-neonPink/20 text-neonPink text-xs px-2 py-0.5 rounded-full font-bold">2 Tempi</span>
+                                </div>
+                                <p class="text-xs text-slate-300"><strong>Presente (Semplice):</strong> io canterei</p>
+                                <p class="text-xs text-slate-300 mt-1"><strong>Passato (Composto):</strong> io avrei cantato</p>
+                            </div>
+
+                            <div class="bg-cyberDark p-4 rounded-2xl border border-cyberBorder">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-neonYellow text-base">IMPERATIVO (Comando, Ordine)</h4>
+                                    <span class="bg-neonYellow/20 text-neonYellow text-xs px-2 py-0.5 rounded-full font-bold">1 Tempo</span>
+                                </div>
+                                <p class="text-xs text-slate-300"><strong>Presente:</strong> canta tu! cantate voi!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: MODI INDEFINITI -->
+            <div id="theory-content-modi-indefiniti" class="theory-content hidden space-y-6">
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyberBorder">
+                    <h3 class="text-xl font-bold text-neonCyan mb-4 flex items-center">
+                        <i class="fa-solid fa-infinity mr-2.5"></i> Modi Indefiniti (Infinito, Participio, Gerundio)
+                    </h3>
+                    <p class="text-sm text-slate-300 mb-6">Non indicano la persona grammaticale e hanno solo 2 tempi: <strong>Presente</strong> e <strong>Passato</strong>.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-cyberDark p-5 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-neonCyan text-base mb-2">1. INFINITO</h4>
+                            <p class="text-xs text-slate-400 mb-3">È il nome del verbo. Può essere usato anche come nome (Infinito Sostantivato).</p>
+                            <div class="text-xs space-y-1 text-slate-200">
+                                <p>• <strong>Presente:</strong> Amare / Leggere</p>
+                                <p>• <strong>Passato:</strong> Avere amato / Avere letto</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-cyberDark p-5 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-neonGreen text-base mb-2">2. PARTICIPIO</h4>
+                            <p class="text-xs text-slate-400 mb-3">Partecipa sia del verbo sia dell'aggettivo/nome. Concorda in genere e numero.</p>
+                            <div class="text-xs space-y-1 text-slate-200">
+                                <p>• <strong>Presente:</strong> Amante / Cantante</p>
+                                <p>• <strong>Passato:</strong> Amato / Cantato</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-cyberDark p-5 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-neonYellow text-base mb-2">3. GERUNDIO</h4>
+                            <p class="text-xs text-slate-400 mb-3">Esprime la causa, il modo o la contemporaneità di un'azione.</p>
+                            <div class="text-xs space-y-1 text-slate-200">
+                                <p>• <strong>Presente:</strong> Amando / Leggendo</p>
+                                <p>• <strong>Passato:</strong> Avendo amato / Avendo letto</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: TRANSITIVI VS INTRANSITIVI -->
+            <div id="theory-content-transitivi" class="theory-content hidden space-y-6">
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyberBorder">
+                    <h3 class="text-xl font-bold text-neonGreen mb-4 flex items-center">
+                        <i class="fa-solid fa-route mr-2.5"></i> Verbi Transitivi e Intransitivi
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-cyberDark p-5 rounded-2xl border-2 border-neonGreen/40">
+                            <span class="bg-neonGreen text-cyberDark text-xs font-black px-2.5 py-1 rounded-full uppercase">TRANSITIVO</span>
+                            <h4 class="text-lg font-bold text-white mt-3 mb-2">L'azione transita sul complemento oggetto</h4>
+                            <p class="text-xs text-slate-300 mb-4">Risponde direttamente alle domande:</p>
+                            <div class="bg-cyberCard p-4 rounded-xl border border-neonGreen/30 text-center font-extrabold text-neonGreen text-xl mb-3">
+                                CHI? / CHE COSA?
+                            </div>
+                            <p class="text-xs text-slate-400"><em>Es:</em> Marco mangia <strong>[che cosa?]</strong> <u>una mela</u>. <br>L'azione passa direttamente alla mela senza preposizioni.</p>
+                        </div>
+
+                        <div class="bg-cyberDark p-5 rounded-2xl border-2 border-neonRed/40">
+                            <span class="bg-neonRed text-white text-xs font-black px-2.5 py-1 rounded-full uppercase">INTRANSITIVO</span>
+                            <h4 class="text-lg font-bold text-white mt-3 mb-2">L'azione NON transita su un oggetto diretto</h4>
+                            <p class="text-xs text-slate-300 mb-4">Richiede una preposizione (a chi? dove? come?):</p>
+                            <div class="bg-cyberCard p-4 rounded-xl border border-neonRed/30 text-center font-extrabold text-neonRed text-xl mb-3">
+                                DOVE? / A CHI? / DA DOVE?
+                            </div>
+                            <p class="text-xs text-slate-400"><em>Es:</em> Marco va <strong>[dove?]</strong> <u>a scuola</u>. <br>C'è la preposizione "a", non è un complemento oggetto!</p>
+                        </div>
+                    </div>
+
+                    <!-- Verbi a doppio uso -->
+                    <div class="bg-cyberCard p-5 rounded-2xl border border-cyberBorder">
+                        <h4 class="font-bold text-neonYellow text-sm mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Attenzione ai Verbi a DOPPIO USO!</h4>
+                        <p class="text-xs text-slate-300">Alcuni verbi possono essere sia transitivi sia intransitivi a seconda del contesto:</p>
+                        <ul class="list-disc list-inside text-xs text-slate-400 mt-2 space-y-1">
+                            <li><strong>Aumentare:</strong> Il professore ha aumentato i voti (Transitivo) VS I prezzi sono aumentati (Intransitivo).</li>
+                            <li><strong>Finire:</strong> Luca ha finito i compiti (Transitivo) VS Il film è finito (Intransitivo).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: FORME DEL VERBO -->
+            <div id="theory-content-forme" class="theory-content hidden space-y-6">
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyberBorder">
+                    <h3 class="text-xl font-bold text-neonPink mb-4 flex items-center">
+                        <i class="fa-solid fa-arrows-rotate mr-2.5"></i> Forma Attiva, Passiva e Riflessiva
+                    </h3>
+
+                    <div class="space-y-4">
+                        <!-- Attiva vs Passiva -->
+                        <div class="bg-cyberDark p-5 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-white text-base mb-2">🟢 Forma Attiva vs 🟡 Forma Passiva</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs mt-3">
+                                <div class="bg-cyberCard p-3.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-neonGreen">Attiva:</strong> Il soggetto COMPIE l'azione. <br>
+                                    <span class="text-slate-400 italic">Es: "Il cane insegue il gatto."</span>
+                                </div>
+                                <div class="bg-cyberCard p-3.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-neonYellow">Passiva:</strong> Il soggetto SUBISCE l'azione dal complemento d'agente. <br>
+                                    <span class="text-slate-400 italic">Es: "Il gatto è inseguito dal cane."</span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-3 bg-neonYellow/10 border border-neonYellow/20 p-2.5 rounded-xl">
+                                <strong>Regola d'oro:</strong> Solo i verbi TRANSITIVI possono avere la forma passiva!
+                            </p>
+                        </div>
+
+                        <!-- Le Forme Riflessive -->
+                        <div class="bg-cyberDark p-5 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-neonPink text-base mb-3">🟣 Le 4 Sfumature della Forma Riflessiva & Pronominale</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                <div class="bg-cyberCard p-3 rounded-xl border border-cyberBorder">
+                                    <strong class="text-neonPink">1. Riflessiva Propria:</strong> L'azione ricade direttamente sul soggetto. <br><em>(Io mi lavo = lavo me stesso)</em>
+                                </div>
+                                <div class="bg-cyberCard p-3 rounded-xl border border-cyberBorder">
+                                    <strong class="text-neonCyan">2. Riflessiva Apparente:</strong> La particella è complemento di termine (a chi?). <br><em>(Io mi lavo le mani = lavo le mani A me)</em>
+                                </div>
+                                <div class="bg-cyberCard p-3 rounded-xl border border-cyberBorder">
+                                    <strong class="text-neonGreen">3. Riflessiva Reciproca:</strong> Due o più soggetti compiono l'azione a vicenda. <br><em>(Paolo e Marco si abbracciano)</em>
+                                </div>
+                                <div class="bg-cyberCard p-3 rounded-xl border border-cyberBorder">
+                                    <strong class="text-neonYellow">4. Intransitiva Pronominale:</strong> Il pronome fa parte integrante del verbo. <br><em>(Vergognarsi, pentirsi, arrabbiarsi)</em>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: VERBI SPECIALI -->
+            <div id="theory-content-speciali" class="theory-content hidden space-y-6">
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyberBorder">
+                    <h3 class="text-xl font-bold text-neonYellow mb-4 flex items-center">
+                        <i class="fa-solid fa-puzzle-piece mr-2.5"></i> Servili, Fraseologici, Defettivi & Sovrabbondanti
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div class="bg-cyberDark p-4 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-neonCyan text-sm mb-1">Verbi Servili</h4>
+                            <p class="text-slate-400 mb-2">Si uniscono direttamente a un altro verbo all'infinito per indicare dovere, possibilità o volontà.</p>
+                            <span class="bg-neonCyan/20 text-neonCyan px-2 py-1 rounded font-bold">DOVERE, POTERE, VOLERE</span>
+                            <p class="text-slate-300 italic mt-2">Es: Devo studiare, Posso uscire.</p>
+                        </div>
+
+                        <div class="bg-cyberDark p-4 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-neonGreen text-sm mb-1">Verbi Fraseologici (Aspettuali)</h4>
+                            <p class="text-slate-400 mb-2">Precisano la fase di svolgimento di un'azione (inizio, continuazione, fine).</p>
+                            <span class="bg-neonGreen/20 text-neonGreen px-2 py-1 rounded font-bold">Stare per, Cominciare a, Smettere di</span>
+                            <p class="text-slate-300 italic mt-2">Es: Sto per mangiare, Ho smesso di piangere.</p>
+                        </div>
+
+                        <div class="bg-cyberDark p-4 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-neonPink text-sm mb-1">Verbi Defettivi</h4>
+                            <p class="text-slate-400 mb-2">Mancano di alcune forme, tempi o persone (verbi "incompleti").</p>
+                            <p class="text-slate-300 italic">Es: Solere, Usurpare, Urgere, Fervere.</p>
+                        </div>
+
+                        <div class="bg-cyberDark p-4 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-neonYellow text-sm mb-1">Verbi Sovrabbondanti</h4>
+                            <p class="text-slate-400 mb-2">Appartengono a due coniugazioni diverse. Alcuni mantengono lo stesso significato, altri lo cambiano del tutto!</p>
+                            <p class="text-slate-300 italic">Stesso signif: Adempiere / Adempire.<br>Cambiano signif: Atterrare (far cadere) vs Atterrire (spaventare).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 6: GUIDA RAPIDA ALLE 9 PARTI DEL DISCORSO -->
+            <div id="theory-content-9parti" class="theory-content hidden space-y-6">
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyberBorder">
+                    <h3 class="text-xl font-bold text-neonGreen mb-4 flex items-center">
+                        <i class="fa-solid fa-list-check mr-2.5"></i> Guida Rapida all'Analisi Grammaticale: Le 9 Parti del Discorso
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- PARTI VARIABILI -->
+                        <div class="bg-cyberDark p-5 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-neonCyan text-base mb-3">5 Parti VARIABILI (cambiano genere/numero/tempo)</h4>
+                            <ul class="space-y-2.5 text-xs text-slate-300">
+                                <li class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">1. Articolo:</strong> Determinativo (il, lo, la...), Indeterminativo (un, uno, una), Partitivo (del, dello...).
+                                </li>
+                                <li class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">2. Nome:</strong> Proprio/Comune, Concreto/Astratto, Individuale/Collettivo, Genere e Numero.
+                                </li>
+                                <li class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">3. Aggettivo:</strong> Qualificativo (grado pos., comparativo, superlativo) o Determinativo (possessivo, dimostrativo...).
+                                </li>
+                                <li class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">4. Pronome:</strong> Sostituisce il nome (personale, possessivo, dimostrativo, relativo...).
+                                </li>
+                                <li class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">5. Verbo:</strong> Coniugazione, modo, tempo, persona, genere (trans/intrans) e forma.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- PARTI INVARIABILI -->
+                        <div class="bg-cyberDark p-5 rounded-2xl border border-cyberBorder">
+                            <h4 class="font-bold text-neonPink text-base mb-3">4 Parti INVARIABILI (non cambiano mai)</h4>
+                            <ul class="space-y-2.5 text-xs text-slate-300">
+                                <li class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">6. Preposizione:</strong> Semplice (di, a, da, in, con, su, per, tra, fra) o Articolata (del, sulla...).
+                                </li>
+                                <li class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">7. Avverbio:</strong> Modifica il significato del verbo/aggettivo (di modo, tempo, luogo, quantità...).
+                                </li>
+                                <li class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">8. Congiunzione:</strong> Collega parole o frasi (Coordinante: e, ma, o / Subordinante: perché, quando...).
+                                </li>
+                                <li class="bg-cyberCard p-2.5 rounded-xl border border-cyberBorder">
+                                    <strong class="text-white">9. Interiezione (Esclamazione):</strong> Esprime emozioni (Ah!, Oh!, Ehi!, Evviva!).
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. SEZIONE ANALISI GRAMMATICALE COMPLETA (DEDICATA) -->
+        <section id="screen-analisi" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <button onclick="switchSection('dashboard')" class="text-slate-400 hover:text-white font-bold text-sm flex items-center transition">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Torna alla Home
+                </button>
+                <h2 class="text-2xl font-extrabold text-white">Laboratorio di Analisi Grammaticale Completa</h2>
+            </div>
+
+            <!-- Modalità Analisi -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Modalità A: Analizza Frase Parola per Parola -->
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyberBorder space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-neonYellow/20 text-neonYellow rounded-2xl flex items-center justify-center text-xl font-bold border border-neonYellow/30">
+                            <i class="fa-solid fa-spell-check"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Analizzatore Parola per Parola</h3>
+                            <p class="text-xs text-slate-400">Analizza tutti gli elementi della frase guida.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-cyberDark p-4 rounded-2xl border border-cyberBorder">
+                        <span class="text-xs font-bold text-neonYellow uppercase tracking-wider">Frase Guida n°1:</span>
+                        <div id="sentence-target-text" class="text-xl font-extrabold text-white mt-1">
+                            "Il cane nero corre felicemente nel giardino."
+                        </div>
+                    </div>
+
+                    <!-- Selettore Parola -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Seleziona la parola da analizzare:</label>
+                        <div id="sentence-words-buttons" class="flex flex-wrap gap-2">
+                            <!-- Bottoni parole da JS -->
+                        </div>
+                    </div>
+
+                    <!-- Form Analisi per la Parola selezionata -->
+                    <div id="word-analysis-box" class="hidden bg-cyberDark p-5 rounded-2xl border border-cyberBorder space-y-4">
+                        <h4 class="font-bold text-neonCyan text-sm">Analisi di: <span id="selected-word-title" class="text-white font-extrabold text-base">"..."</span></h4>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <label class="block font-bold text-slate-400 mb-1">Parte del Discorso</label>
+                                <select id="analysis-part-speech" class="w-full p-2.5 rounded-xl bg-cyberCard border border-cyberBorder text-white font-semibold outline-none">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Articolo">Articolo</option>
+                                    <option value="Nome">Nome</option>
+                                    <option value="Aggettivo">Aggettivo</option>
+                                    <option value="Pronome">Pronome</option>
+                                    <option value="Verbo">Verbo</option>
+                                    <option value="Preposizione">Preposizione</option>
+                                    <option value="Avverbio">Avverbio</option>
+                                    <option value="Congiunzione">Congiunzione</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block font-bold text-slate-400 mb-1">Dettaglio Grammaticale</label>
+                                <select id="analysis-detail" class="w-full p-2.5 rounded-xl bg-cyberCard border border-cyberBorder text-white font-semibold outline-none">
+                                    <option value="">Seleziona Dettaglio...</option>
+                                    <option value="Det. Maschile Singolare">Det. Maschile Singolare</option>
+                                    <option value="Comune di animale, masch. sing.">Comune di animale, m. s.</option>
+                                    <option value="Qualificativo masch. sing.">Qualificativo m. s.</option>
+                                    <option value="3ª pers. sing. indicativo pres. att.">3ª p.s. indicativo pres.</option>
+                                    <option value="Avverbio di modo">Avverbio di modo</option>
+                                    <option value="Preposizione articolata (in+il)">Prep. articolata (in+il)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onclick="checkWordAnalysis()" class="w-full py-3 bg-neonYellow hover:opacity-90 text-cyberDark font-extrabold rounded-xl text-sm transition btn-bounce">
+                            Verifica Parola
+                        </button>
+                        <div id="word-analysis-feedback" class="hidden p-3 rounded-xl text-xs font-bold text-center"></div>
+                    </div>
+                </div>
+
+                <!-- Modalità B: Trova l'Errore nell'Analisi -->
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyberBorder space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-neonRed/20 text-neonRed rounded-2xl flex items-center justify-center text-xl font-bold border border-neonRed/30">
+                            <i class="fa-solid fa-bug"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Caccia all'Errore nell'Analisi</h3>
+                            <p class="text-xs text-slate-400">Trova lo sbaglio nell'analisi grammaticale data!</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-cyberDark p-5 rounded-2xl border border-cyberBorder space-y-3">
+                        <span class="text-xs font-bold text-neonRed uppercase">Analisi proposta con errore:</span>
+                        <div id="bug-target-word" class="text-2xl font-extrabold text-white">"AVESSIMO MANGIATO"</div>
+                        <p id="bug-target-analysis" class="text-xs text-slate-300 italic bg-cyberCard p-3 rounded-xl border border-cyberBorder">
+                            "Verbo mangiare, 1ª persona plurale, modo Indicativo, tempo Imperfetto."
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-300 uppercase">Qual è l'errore in questa analisi?</label>
+                        <div id="bug-options" class="space-y-2">
+                            <!-- Bottoni opzioni errore da JS -->
+                        </div>
+                    </div>
+
+                    <div id="bug-feedback" class="hidden p-3 rounded-xl text-xs font-bold text-center"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. SEZIONE GIOCHI ARCADE (4 MODALITÀ) -->
+        <section id="screen-giochi" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <button onclick="switchSection('dashboard')" class="text-slate-400 hover:text-white font-bold text-sm flex items-center transition">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Torna al Menu Principale
+                </button>
+                <h2 class="text-2xl font-extrabold text-white">Arcade Games Hub</h2>
+            </div>
+
+            <!-- Griglia dei 4 Giochi -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="games-menu">
+                <!-- Gioco 1: Quiz Sfida del Tempo -->
+                <div onclick="startQuizGame()" class="glass-panel hover:border-neonYellow border border-cyberBorder rounded-3xl p-6 cursor-pointer transition btn-bounce text-center flex flex-col justify-between group">
+                    <div>
+                        <div class="w-16 h-16 bg-neonYellow/20 text-neonYellow rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-neonYellow/30 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-stopwatch"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Quiz Sfida a Tempo</h3>
+                        <p class="text-xs text-slate-400 mb-4">Rispondi prima dello scadere del tempo per mantenere alta la Combo di Punti!</p>
+                    </div>
+                    <span class="bg-neonYellow text-cyberDark font-black text-xs px-4 py-2.5 rounded-xl uppercase">GIOCA (+100 EXP)</span>
+                </div>
+
+                <!-- Gioco 2: Smista Parole -->
+                <div onclick="startSortGame()" class="glass-panel hover:border-neonGreen border border-cyberBorder rounded-3xl p-6 cursor-pointer transition btn-bounce text-center flex flex-col justify-between group">
+                    <div>
+                        <div class="w-16 h-16 bg-neonGreen/20 text-neonGreen rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-neonGreen/30 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-box-archive"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Smista-Verbi Arcade</h3>
+                        <p class="text-xs text-slate-400 mb-4">Classifica al volo: Transitivo vs Intransitivo o Attivo vs Passivo!</p>
+                    </div>
+                    <span class="bg-neonGreen text-cyberDark font-black text-xs px-4 py-2.5 rounded-xl uppercase">GIOCA (+80 EXP)</span>
+                </div>
+
+                <!-- Gioco 3: Cacciatore di Errori -->
+                <div onclick="startBugGame()" class="glass-panel hover:border-neonRed border border-cyberBorder rounded-3xl p-6 cursor-pointer transition btn-bounce text-center flex flex-col justify-between group">
+                    <div>
+                        <div class="w-16 h-16 bg-neonRed/20 text-neonRed rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-neonRed/30 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-crosshairs"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Cacciatore di Errori</h3>
+                        <p class="text-xs text-slate-400 mb-4">Scova l'errore grammaticale nascosto nelle frasi trabocchetto.</p>
+                    </div>
+                    <span class="bg-neonRed text-white font-black text-xs px-4 py-2.5 rounded-xl uppercase">GIOCA (+110 EXP)</span>
+                </div>
+
+                <!-- Gioco 4: Speed Duel Parti del Discorso -->
+                <div onclick="startDuelGame()" class="glass-panel hover:border-neonCyan border border-cyberBorder rounded-3xl p-6 cursor-pointer transition btn-bounce text-center flex flex-col justify-between group">
+                    <div>
+                        <div class="w-16 h-16 bg-neonCyan/20 text-neonCyan rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-neonCyan/30 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-bolt-lightning"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Speed Duel 9 Parti</h3>
+                        <p class="text-xs text-slate-400 mb-4">Riconosci velocemente la categoria grammaticale della parola.</p>
+                    </div>
+                    <span class="bg-neonCyan text-cyberDark font-black text-xs px-4 py-2.5 rounded-xl uppercase">GIOCA (+90 EXP)</span>
+                </div>
+            </div>
+
+            <!-- GAME CONTAINER DINAMICO -->
+            <div id="game-container" class="hidden glass-panel rounded-3xl p-6 sm:p-10 border border-cyberBorder relative max-w-3xl mx-auto">
+                <button onclick="exitGame()" class="absolute top-6 right-6 text-slate-400 hover:text-white font-bold bg-cyberDark p-2.5 rounded-xl w-10 h-10 flex items-center justify-center transition border border-cyberBorder">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+
+                <!-- 1. SUBGAME QUIZ -->
+                <div id="subgame-quiz" class="hidden space-y-6">
+                    <div class="flex justify-between items-center border-b border-cyberBorder pb-4">
+                        <span id="quiz-progress" class="text-xs font-bold text-slate-400 uppercase">Domanda 1 di 8</span>
+                        <div class="flex items-center space-x-3">
+                            <span id="quiz-combo" class="bg-neonPink/20 text-neonPink text-xs font-extrabold px-3 py-1 rounded-full border border-neonPink/30">COMBO x1</span>
+                            <div class="flex items-center space-x-1.5 bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-sm font-bold border border-amber-500/30">
+                                <i class="fa-solid fa-clock"></i>
+                                <span id="quiz-timer">15</span>s
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 id="quiz-question" class="text-xl sm:text-2xl font-extrabold text-white text-center py-4">...</h3>
+
+                    <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                    <div id="quiz-feedback" class="hidden p-4 rounded-2xl text-center font-bold text-sm"></div>
+                </div>
+
+                <!-- 2. SUBGAME SMISTA VERBI -->
+                <div id="subgame-sort" class="hidden space-y-6 text-center">
+                    <div class="flex justify-between items-center border-b border-cyberBorder pb-4">
+                        <span id="sort-score" class="text-xs font-bold text-slate-400 uppercase">Punti: 0</span>
+                        <span id="sort-count" class="text-xs font-bold text-neonGreen uppercase">Verbo 1 / 7</span>
+                    </div>
+
+                    <div class="py-4">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Analizza questa parola/frase:</span>
+                        <div id="sort-word" class="text-3xl sm:text-4xl font-extrabold text-neonCyan mt-2 mb-2">"MANGIARE"</div>
+                        <p id="sort-context" class="text-xs text-slate-400 italic">"Marco ha mangiato una pizza."</p>
+                    </div>
+
+                    <div id="sort-buttons" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                    <div id="sort-feedback" class="hidden p-4 rounded-2xl text-center font-bold text-sm"></div>
+                </div>
+
+                <!-- 3. SUBGAME CACCIATORE DI ERRORI -->
+                <div id="subgame-bug" class="hidden space-y-6">
+                    <div class="flex justify-between items-center border-b border-cyberBorder pb-4">
+                        <span class="text-xs font-bold text-neonRed uppercase">Caccia all'Errore</span>
+                        <span id="bug-count" class="text-xs font-bold text-slate-400">Frase 1 / 5</span>
+                    </div>
+
+                    <div class="text-center py-2">
+                        <p class="text-xs text-slate-400 mb-1">Trova la parola o forma verbale SBAGLIATA in questa frase:</p>
+                        <div id="bug-sentence-box" class="text-xl font-extrabold text-white bg-cyberDark p-4 rounded-2xl border border-cyberBorder">
+                            ...
+                        </div>
+                    </div>
+
+                    <div id="bug-sentence-words" class="flex flex-wrap justify-center gap-2"></div>
+                    <div id="bug-game-feedback" class="hidden p-4 rounded-2xl text-center font-bold text-sm"></div>
+                </div>
+
+                <!-- 4. SUBGAME SPEED DUEL 9 PARTI -->
+                <div id="subgame-duel" class="hidden space-y-6 text-center">
+                    <div class="flex justify-between items-center border-b border-cyberBorder pb-4">
+                        <span id="duel-score" class="text-xs font-bold text-slate-400 uppercase">Score: 0</span>
+                        <span id="duel-timer" class="text-xs font-bold text-neonCyan uppercase">Tempo: 30s</span>
+                    </div>
+
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase">Qual è la parte del discorso di:</span>
+                        <div id="duel-target-word" class="text-4xl font-extrabold text-neonYellow my-3">"VELOCEMENTE"</div>
+                    </div>
+
+                    <div id="duel-options" class="grid grid-cols-3 gap-3"></div>
+                    <div id="duel-feedback" class="hidden p-3 rounded-xl text-center font-bold text-xs"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. REPORT DOCENTE DETTAGLIATO (STAMPABILE / EXPORT PDF) -->
+        <section id="screen-report" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 no-print">
+                <button onclick="switchSection('dashboard')" class="text-slate-400 hover:text-white font-bold text-sm flex items-center transition">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Torna alla Dashboard
+                </button>
+                <button onclick="window.print()" class="bg-gradient-to-r from-neonCyan to-neonBlue text-cyberDark font-extrabold px-5 py-2.5 rounded-xl text-sm flex items-center space-x-2 shadow-lg btn-bounce">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Stampa / Esporta PDF Report</span>
+                </button>
+            </div>
+
+            <!-- SCHEDA REPORT UFFICIALE DOCENTE -->
+            <div class="glass-panel rounded-3xl p-6 sm:p-10 border border-cyberBorder max-w-4xl mx-auto space-y-8 bg-white text-slate-800" id="printable-report">
+                <!-- Header Report -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-6 gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div id="report-avatar" class="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center text-3xl font-bold shadow-md">
+                            🎓
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900" id="report-student-name">Alessandro Bianchi</h2>
+                            <p class="text-sm font-bold text-purple-700">Classe: <span id="report-student-class" class="text-slate-800">2ª A</span></p>
+                            <p class="text-xs text-slate-500">Scheda di Valutazione VerbaMaster 3.0 Ultra</p>
+                        </div>
+                    </div>
+                    <div class="text-left sm:text-right">
+                        <div class="text-xs text-slate-400 uppercase font-bold">Data Generazione Report</div>
+                        <div class="text-sm font-bold text-slate-700" id="report-date">12/10/2026</div>
+                        <span class="inline-block bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full mt-2">Valutazione Completata</span>
+                    </div>
+                </div>
+
+                <!-- Sintesi Tre Colonne -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <div class="text-xs font-bold text-slate-500 uppercase">Punti EXP Accumulati</div>
+                        <div class="text-3xl font-extrabold text-purple-600 mt-1" id="report-total-exp">0</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <div class="text-xs font-bold text-slate-500 uppercase">Grado Raggiunto</div>
+                        <div class="text-xl font-extrabold text-blue-600 mt-1" id="report-level">Liv. 1 - Novizio</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <div class="text-xs font-bold text-slate-500 uppercase">Accuratezza Globale</div>
+                        <div class="text-3xl font-extrabold text-emerald-600 mt-1" id="report-accuracy">0%</div>
+                    </div>
+                </div>
+
+                <!-- Tabella Analitica Competenze -->
+                <div class="space-y-4">
+                    <h3 class="font-extrabold text-slate-900 text-lg border-b border-slate-200 pb-2">Analisi Analitica delle Competenze Grammaticali</h3>
+
+                    <!-- Competenza 1 -->
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span class="text-slate-700">1. Modi & Tempi Verbali (Quiz a Tempo)</span>
+                            <span id="report-modi-perc" class="text-blue-600">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                            <div id="report-modi-bar" class="bg-blue-500 h-full w-0 transition-all duration-500"></div>
+                        </div>
+                    </div>
+
+                    <!-- Competenza 2 -->
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span class="text-slate-700">2. Transitività & Forme Attiva/Passiva/Riflessiva (Smista-Verbi)</span>
+                            <span id="report-forme-perc" class="text-emerald-600">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                            <div id="report-forme-bar" class="bg-emerald-500 h-full w-0 transition-all duration-500"></div>
+                        </div>
+                    </div>
+
+                    <!-- Competenza 3 -->
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span class="text-slate-700">3. Analisi Grammaticale Completa (Lab 9 Parti del Discorso)</span>
+                            <span id="report-lab-perc" class="text-purple-600">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                            <div id="report-lab-bar" class="bg-purple-500 h-full w-0 transition-all duration-500"></div>
+                        </div>
+                    </div>
+
+                    <!-- Competenza 4 -->
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span class="text-slate-700">4. Riconoscimento Errori & Speed Duel</span>
+                            <span id="report-speed-perc" class="text-amber-600">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                            <div id="report-speed-bar" class="bg-amber-500 h-full w-0 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Giudizio del Sistema -->
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+                    <h4 class="font-extrabold text-amber-900 text-sm mb-1">Giudizio Sintetico Motivazionale:</h4>
+                    <p class="text-xs text-amber-800 leading-relaxed" id="report-evaluation-text">
+                        Lo studente ha effettuato l'accesso all'applicazione. Si consiglia di completare le attività per generare la valutazione analitica del docente.
+                    </p>
+                </div>
+
+                <!-- Piè di Pagina e Firma -->
+                <div class="pt-8 border-t border-slate-200 flex justify-between items-end text-xs text-slate-500">
+                    <div>
+                        VerbaMaster 3.0 Ultra • Piattaforma Didattica di Italiano 2ª Media
+                    </div>
+                    <div class="text-center border-t border-slate-400 pt-1 w-48 font-bold text-slate-700">
+                        Firma del Docente
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER BAR -->
+    <footer class="glass-panel border-t border-cyberBorder py-4 text-center text-xs text-slate-500 no-print">
+        <p>VerbaMaster 3.0 Ultra © 2026 - Piattaforma per la Scuola Secondaria di Primo Grado (Classi 2ªA - 2ªG)</p>
+    </footer>
+
+    <!-- LOGICA JAVASCRIPT COMPLETA E INTEGRATA -->
+    <script>
+        /* --- DATI E DB --- */
+        const AVATARS = ['🦊', '🐱', '🐶', '🦁', '🤖', '🦉', '🐼', '🐸', '🚀', '⭐'];
+
+        const QUIZ_QUESTIONS = [
+            {
+                q: "In quale frase il verbo è al CONGIUNTIVO IMPERFETTO?",
+                options: ["Se io avessi tempo, verrei.", "Speravo che tu venissi alla mia festa.", "Luca studiava ogni giorno.", "Avrei voluto un gelato."],
+                correct: 1,
+                explain: "'Venissi' è congiuntivo imperfetto (2ª pers. singolare del verbo venire)."
+            },
+            {
+                q: "Quale tra questi è un MODO INDEFINITO del verbo?",
+                options: ["Indicativo", "Gerundio", "Condizionale", "Imperativo"],
+                correct: 1,
+                explain: "Il Gerundio non ha la persona grammaticale (io, tu, egli...) ed è quindi indefinito."
+            },
+            {
+                q: "Quale frase contiene un verbo in FORMA PASSIVA?",
+                options: ["La mamma cucina una torta.", "Il gatto è stato inseguito dal cane.", "Marco si lava le mani.", "Luca è andato a scuola."],
+                correct: 1,
+                explain: "'È stato inseguito' è forma passiva (il gatto subisce l'azione dal cane)."
+            },
+            {
+                q: "Il verbo 'ANDARE' è:",
+                options: ["Transitivo", "Intransitivo", "Riflessivo", "Passivo"],
+                correct: 1,
+                explain: "'Andare' risponde alla domanda 'Dove?' e non 'Chi? Che cosa?'. Quindi è intransitivo."
+            },
+            {
+                q: "Quale frase contiene un VERBO SERVILE?",
+                options: ["Devo finire i compiti entro sera.", "Sto per uscire con i miei amici.", "Mi sono svegliato molto presto.", "Il sole splende nel cielo."],
+                correct: 0,
+                explain: "'Devo' (dovere) unito all'infinito 'finire' ha funzione servile."
+            },
+            {
+                q: "Qual è il tempo del verbo 'NOI AVEMMO MANGIATO'?",
+                options: ["Passato Prossimo", "Trapassato Remoto", "Trapassato Prossimo", "Passato Remoto"],
+                correct: 1,
+                explain: "'Avemmo mangiato' è il Trapassato Remoto dell'indicativo."
+            },
+            {
+                q: "Trova la RIFLESSIVA APPARENTE:",
+                options: ["Marco e Luca si abbracciano.", "Luca si pettina i capelli.", "Francesca si specchia.", "Gianna si arrabbia sempre."],
+                correct: 1,
+                explain: "'Si pettina i capelli' = pettina i capelli A SE STESSO (il pronome è compl. di termine)."
+            },
+            {
+                q: "Quale tra questi è un verbo DEFETTIVO?",
+                options: ["Studiare", "Solere", "Amare", "Scrivere"],
+                correct: 1,
+                explain: "'Solere' (essere solito) è defettivo perché manca di molti tempi e persone."
+            }
+        ];
+
+        const SORT_ITEMS = [
+            { word: "LEGGERE", context: "Luca legge un romanzo avvincente.", category: "Transitivo" },
+            { word: "CAMMINARE", context: "Paolo cammina lungo il fiume.", category: "Intransitivo" },
+            { word: "PENTIRSI", context: "Il ragazzo si è pentito del suo errore.", category: "Riflessivo" },
+            { word: "ESSERE PREMIATO", context: "L'atleta è stato premiato dal sindaco.", category: "Passivo" },
+            { word: "CUCINARE", context: "La nonna cucina la lasagne.", category: "Attivo" },
+            { word: "DORMIRE", context: "Il gatto dorme sulla poltrona.", category: "Intransitivo" },
+            { word: "COMPRARE", context: "Ho comprato un libro nuovo.", category: "Transitivo" }
+        ];
+
+        const BUG_QUESTIONS = [
+            {
+                sentence: "Io avrei voluto uscire, ma io ebbi dovuto studiare.",
+                words: ["Io", "avrei", "voluto", "uscire,", "ma", "io", "ebbi", "dovuto", "studiare."],
+                wrongIdx: 6, // ebbi
+                explain: "Errore! La forma corretta è 'ho dovuto studiare' o 'avevo dovuto studiare', non 'ebbi dovuto'."
+            },
+            {
+                sentence: "Se tu venissi ieri, avremmo giocato insieme.",
+                words: ["Se", "tu", "venissi", "ieri,", "avremmo", "giocato", "insieme."],
+                wrongIdx: 2, // venissi
+                explain: "Errore! Riferito a ieri serviva il trapassato del congiuntivo: 'Se tu fossi venuto'."
+            },
+            {
+                sentence: "La torta è stata mangiata di Luca in due minuti.",
+                words: ["La", "torta", "è", "stata", "mangiata", "di", "Luca", "in", "due", "minuti."],
+                wrongIdx: 5, // di
+                explain: "Errore! Il complemento d'agente richiede la preposizione 'DA' (da Luca)."
+            }
+        ];
+
+        const DUEL_WORDS = [
+            { word: "VELOCEMENTE", type: "Avverbio" },
+            { word: "CASA", type: "Nome" },
+            { word: "CORRERE", type: "Verbo" },
+            { word: "BELLO", type: "Aggettivo" },
+            { word: "E", type: "Congiunzione" },
+            { word: "CON", type: "Preposizione" },
+            { word: "EHI!", type: "Interiezione" },
+            { word: "IL", type: "Articolo" }
+        ];
+
+        /* --- STATO APPLICAZIONE --- */
+        let state = {
+            user: {
+                nome: '',
+                cognome: '',
+                classe: '',
+                avatar: '🦊',
+                exp: 0,
+                level: 1
+            },
+            stats: {
+                quizCorrect: 0, quizTotal: 0,
+                sortCorrect: 0, sortTotal: 0,
+                labCorrect: 0, labTotal: 0,
+                bugCorrect: 0, bugTotal: 0,
+                duelCorrect: 0, duelTotal: 0
+            }
+        };
+
+        // Variabili Temporanee per i Giochi
+        let currentQuizIndex = 0;
+        let quizTimerInterval = null;
+        let quizTimeLeft = 15;
+        let quizCombo = 1;
+
+        let currentSortIndex = 0;
+        let sortScore = 0;
+
+        let currentBugIndex = 0;
+
+        let duelScore = 0;
+        let duelTimerInterval = null;
+        let duelTimeLeft = 30;
+
+        /* --- INIZIALIZZAZIONE --- */
+        window.onload = function() {
+            renderAvatarSelector();
+            document.getElementById('report-date').innerText = new Date().toLocaleDateString('it-IT');
+            setupSentenceLab();
+            setupBugLab();
+        };
+
+        function renderAvatarSelector() {
+            const container = document.getElementById('avatar-selector');
+            container.innerHTML = AVATARS.map((av, idx) => `
+                <button type="button" onclick="selectAvatar('${av}', this)" class="avatar-option w-10 h-10 text-xl border ${idx === 0 ? 'border-neonPurple bg-neonPurple/20' : 'border-cyberBorder'} rounded-xl flex items-center justify-center hover:scale-110 transition">
+                    ${av}
+                </button>
+            `).join('');
+        }
+
+        function selectAvatar(av, btn) {
+            state.user.avatar = av;
+            document.querySelectorAll('.avatar-option').forEach(b => {
+                b.classList.remove('border-neonPurple', 'bg-neonPurple/20');
+                b.classList.add('border-cyberBorder');
+            });
+            btn.classList.remove('border-cyberBorder');
+            btn.classList.add('border-neonPurple', 'bg-neonPurple/20');
+        }
+
+        /* --- LOGICA LOGIN --- */
+        function handleLogin(e) {
+            e.preventDefault();
+            state.user.nome = document.getElementById('input-nome').value.trim();
+            state.user.cognome = document.getElementById('input-cognome').value.trim();
+            state.user.classe = document.getElementById('input-classe').value;
+
+            // Aggiorna UI
+            document.getElementById('main-header').classList.remove('hidden');
+            document.getElementById('header-user-name').innerText = `${state.user.nome} ${state.user.cognome.charAt(0)}.`;
+            document.getElementById('header-avatar').innerText = state.user.avatar;
+            document.getElementById('dash-user-name').innerText = state.user.nome;
+            document.getElementById('dash-avatar').innerText = state.user.avatar;
+            document.getElementById('report-student-name').innerText = `${state.user.nome} ${state.user.cognome}`;
+            document.getElementById('report-student-class').innerText = state.user.classe;
+            document.getElementById('report-avatar').innerText = state.user.avatar;
+
+            updateUserStats();
+            switchSection('dashboard');
+        }
+
+        /* --- GESTIONE SEZIONI E TAB --- */
+        function switchSection(sectionId) {
+            const sections = ['screen-login', 'screen-dashboard', 'screen-ripasso', 'screen-analisi', 'screen-giochi', 'screen-report'];
+            sections.forEach(sec => document.getElementById(sec).classList.add('hidden'));
+            document.getElementById(`screen-${sectionId}`).classList.remove('hidden');
+
+            if(sectionId === 'report') {
+                updateReportUI();
+            }
+        }
+
+        function showTheoryTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-neonPurple', 'text-white');
+                btn.classList.add('bg-cyberCard', 'text-slate-400');
+            });
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.classList.remove('bg-cyberCard', 'text-slate-400');
+            activeBtn.classList.add('active', 'bg-neonPurple', 'text-white');
+
+            document.querySelectorAll('.theory-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(`theory-content-${tabName}`).classList.remove('hidden');
+        }
+
+        /* --- SISTEMA EXP E BADGES --- */
+        function addEXP(points) {
+            state.user.exp += points;
+            const newLevel = Math.floor(state.user.exp / 150) + 1;
+            if (newLevel > state.user.level) {
+                state.user.level = newLevel;
+                confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+            }
+            updateUserStats();
+        }
+
+        function updateUserStats() {
+            document.getElementById('user-exp').innerText = state.user.exp;
+            
+            const titles = ["Novizio del Verbo", "Esploratore Grammaticale", "Campione della Sintassi", "Maestro della Lingua", "Leggenda del Verbo"];
+            const titleIdx = Math.min(state.user.level - 1, titles.length - 1);
+            
+            document.getElementById('user-level-badge').innerText = `Liv. ${state.user.level}`;
+            document.getElementById('dash-level-title').innerText = titles[titleIdx];
+            document.getElementById('dash-exp-val').innerText = state.user.exp;
+
+            const progress = (state.user.exp % 150) / 150 * 100;
+            document.getElementById('dash-level-bar').style.width = `${progress}%`;
+
+            renderBadges();
+        }
+
+        function renderBadges() {
+            const badges = [
+                { title: "Primo Accesso", icon: "🌱", req: state.user.exp >= 20 },
+                { title: "Sfreccia Tempi", icon: "⚡", req: state.stats.quizCorrect >= 4 },
+                { title: "Smistatore Pro", icon: "📦", req: state.stats.sortCorrect >= 4 },
+                { title: "Cacciatore Bug", icon: "🎯", req: state.stats.bugCorrect >= 2 },
+                { title: "Mago delle 9 Parti", icon: "🧙‍♂️", req: state.stats.duelCorrect >= 5 },
+                { title: "Leggenda", icon: "👑", req: state.user.level >= 3 }
+            ];
+
+            const container = document.getElementById('badges-container');
+            container.innerHTML = badges.map(b => `
+                <div class="p-3 rounded-2xl border ${b.req ? 'bg-neonPurple/10 border-neonPurple/40 text-white' : 'bg-cyberDark border-cyberBorder text-slate-500 opacity-40'} text-center">
+                    <div class="text-2xl mb-1">${b.icon}</div>
+                    <div class="text-xs font-bold">${b.title}</div>
+                    <div class="text-[10px] ${b.req ? 'text-neonPurple' : 'text-slate-500'}">${b.req ? 'Sbloccato' : 'Bloccato'}</div>
+                </div>
+            `).join('');
+        }
+
+        /* --- LAB ANALISI PAROLA PER PAROLA --- */
+        let sentenceData = [
+            { word: "Il", part: "Articolo", detail: "Det. Maschile Singolare" },
+            { word: "cane", part: "Nome", detail: "Comune di animale, masch. sing." },
+            { word: "nero", part: "Aggettivo", detail: "Qualificativo masch. sing." },
+            { word: "corre", part: "Verbo", detail: "3ª pers. sing. indicativo pres. att." },
+            { word: "felicemente", part: "Avverbio", detail: "Avverbio di modo" },
+            { word: "nel", part: "Preposizione", detail: "Preposizione articolata (in+il)" },
+            { word: "giardino", part: "Nome", detail: "Comune di animale, masch. sing." }
+        ];
+
+        let activeLabWord = null;
+
+        function setupSentenceLab() {
+            const container = document.getElementById('sentence-words-buttons');
+            container.innerHTML = sentenceData.map((item, idx) => `
+                <button onclick="selectLabWord(${idx}, this)" class="px-3.5 py-2 rounded-xl bg-cyberCard border border-cyberBorder text-white text-xs font-bold hover:border-neonYellow transition">
+                    ${item.word}
+                </button>
+            `).join('');
+        }
+
+        function selectLabWord(idx, btn) {
+            activeLabWord = sentenceData[idx];
+            document.querySelectorAll('#sentence-words-buttons button').forEach(b => b.classList.remove('border-neonYellow', 'bg-neonYellow/20'));
+            btn.classList.add('border-neonYellow', 'bg-neonYellow/20');
+
+            document.getElementById('word-analysis-box').classList.remove('hidden');
+            document.getElementById('selected-word-title').innerText = `"${activeLabWord.word}"`;
+            document.getElementById('word-analysis-feedback').classList.add('hidden');
+        }
+
+        function checkWordAnalysis() {
+            if(!activeLabWord) return;
+            state.stats.labTotal++;
+
+            const userPart = document.getElementById('analysis-part-speech').value;
+            const userDetail = document.getElementById('analysis-detail').value;
+
+            const feedback = document.getElementById('word-analysis-feedback');
+            feedback.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-400', 'bg-rose-500/20', 'text-rose-400');
+
+            if(userPart === activeLabWord.part && userDetail === activeLabWord.detail) {
+                state.stats.labCorrect++;
+                addEXP(15);
+                feedback.classList.add('bg-emerald-500/20', 'text-emerald-400');
+                feedback.innerText = "✨ Analisi Esatta! Complimenti per la precisione.";
+            } else {
+                feedback.classList.add('bg-rose-500/20', 'text-rose-400');
+                feedback.innerText = `❌ Sbagliato. Soluzione: ${activeLabWord.part} (${activeLabWord.detail}).`;
+            }
+        }
+
+        /* --- LAB BUG HUNTER --- */
+        function setupBugLab() {
+            const bugOptionsContainer = document.getElementById('bug-options');
+            bugOptionsContainer.innerHTML = [
+                "L'errore è 'avrei voluto': serviva l'indicativo.",
+                "L'errore è 'ebbi dovuto': è un tempo composto sbagliato per questo contesto.",
+                "L'errore è 'uscire': doveva essere all'indicativo."
+            ].map((opt, idx) => `
+                <button onclick="checkBugLabAnswer(${idx})" class="w-full text-left p-3 rounded-xl bg-cyberCard border border-cyberBorder text-xs text-slate-300 font-semibold hover:border-neonRed transition">
+                    ${opt}
+                </button>
+            `).join('');
+        }
+
+        function checkBugLabAnswer(idx) {
+            const feedback = document.getElementById('bug-feedback');
+            feedback.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-400', 'bg-rose-500/20', 'text-rose-400');
+            if(idx === 1) {
+                addEXP(20);
+                feedback.classList.add('bg-emerald-500/20', 'text-emerald-400');
+                feedback.innerText = "🎯 Bravissimo! Hai trovato l'errore nell'uso del tempo verbale!";
+            } else {
+                feedback.classList.add('bg-rose-500/20', 'text-rose-400');
+                feedback.innerText = "❌ Non è corretto. L'errore risiedeva nella forma 'ebbi dovuto'.";
+            }
+        }
+
+        /* --- GIOCO 1: QUIZ SFIDA DEL TEMPO --- */
+        function startQuizGame() {
+            showSubgame('subgame-quiz');
+            currentQuizIndex = 0;
+            quizCombo = 1;
+            loadQuizQuestion();
+        }
+
+        function loadQuizQuestion() {
+            if(currentQuizIndex >= QUIZ_QUESTIONS.length) {
+                alert(`Quiz completato! Hai ottenuto ottimi punti EXP!`);
+                exitGame();
+                return;
+            }
+
+            clearInterval(quizTimerInterval);
+            quizTimeLeft = 15;
+            document.getElementById('quiz-timer').innerText = quizTimeLeft;
+            document.getElementById('quiz-combo').innerText = `COMBO x${quizCombo}`;
+
+            const q = QUIZ_QUESTIONS[currentQuizIndex];
+            document.getElementById('quiz-progress').innerText = `Domanda ${currentQuizIndex + 1} di ${QUIZ_QUESTIONS.length}`;
+            document.getElementById('quiz-question').innerText = q.q;
+
+            const optsContainer = document.getElementById('quiz-options');
+            optsContainer.innerHTML = q.options.map((opt, idx) => `
+                <button onclick="submitQuizAnswer(${idx})" class="p-4 rounded-2xl bg-cyberDark border border-cyberBorder hover:border-neonYellow text-slate-200 font-bold text-left transition text-sm flex items-center justify-between">
+                    <span>${opt}</span>
+                    <i class="fa-solid fa-chevron-right text-slate-500"></i>
+                </button>
+            `).join('');
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+
+            quizTimerInterval = setInterval(() => {
+                quizTimeLeft--;
+                document.getElementById('quiz-timer').innerText = quizTimeLeft;
+                if(quizTimeLeft <= 0) {
+                    clearInterval(quizTimerInterval);
+                    submitQuizAnswer(-1);
+                }
+            }, 1000);
+        }
+
+        function submitQuizAnswer(idx) {
+            clearInterval(quizTimerInterval);
+            state.stats.quizTotal++;
+            const q = QUIZ_QUESTIONS[currentQuizIndex];
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-400', 'bg-rose-500/20', 'text-rose-400');
+
+            if(idx === q.correct) {
+                state.stats.quizCorrect++;
+                const pts = 15 * quizCombo;
+                addEXP(pts);
+                quizCombo++;
+                feedback.classList.add('bg-emerald-500/20', 'text-emerald-400');
+                feedback.innerText = `✅ Esatto (+${pts} EXP)! ${q.explain}`;
+            } else {
+                quizCombo = 1;
+                feedback.classList.add('bg-rose-500/20', 'text-rose-400');
+                feedback.innerText = `❌ Sbagliato! ${q.explain}`;
+            }
+
+            setTimeout(() => {
+                currentQuizIndex++;
+                loadQuizQuestion();
+            }, 2000);
+        }
+
+        /* --- GIOCO 2: SMISTA-VERBI ARCADE --- */
+        function startSortGame() {
+            showSubgame('subgame-sort');
+            currentSortIndex = 0;
+            sortScore = 0;
+            loadSortItem();
+        }
+
+        function loadSortItem() {
+            if(currentSortIndex >= SORT_ITEMS.length) {
+                alert("Smistamento completato!");
+                exitGame();
+                return;
+            }
+
+            const item = SORT_ITEMS[currentSortIndex];
+            document.getElementById('sort-count').innerText = `Verbo ${currentSortIndex + 1} / ${SORT_ITEMS.length}`;
+            document.getElementById('sort-word').innerText = `"${item.word}"`;
+            document.getElementById('sort-context').innerText = `"${item.context}"`;
+            document.getElementById('sort-feedback').classList.add('hidden');
+
+            const btnContainer = document.getElementById('sort-buttons');
+            const categories = ["Transitivo", "Intransitivo", "Attivo", "Passivo", "Riflessivo"];
+
+            btnContainer.innerHTML = categories.map(cat => `
+                <button onclick="submitSortAnswer('${cat}')" class="p-3.5 rounded-2xl bg-cyberDark border border-cyberBorder hover:border-neonGreen text-white font-bold text-sm transition btn-bounce">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function submitSortAnswer(selectedCat) {
+            state.stats.sortTotal++;
+            const item = SORT_ITEMS[currentSortIndex];
+            const feedback = document.getElementById('sort-feedback');
+            feedback.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-400', 'bg-rose-500/20', 'text-rose-400');
+
+            if(selectedCat === item.category) {
+                state.stats.sortCorrect++;
+                addEXP(12);
+                feedback.classList.add('bg-emerald-500/20', 'text-emerald-400');
+                feedback.innerText = `✨ Ottimo! "${item.word}" è infatti ${item.category}.`;
+            } else {
+                feedback.classList.add('bg-rose-500/20', 'text-rose-400');
+                feedback.innerText = `❌ Errato. La categoria corretta era: ${item.category}.`;
+            }
+
+            setTimeout(() => {
+                currentSortIndex++;
+                loadSortItem();
+            }, 1500);
+        }
+
+        /* --- GIOCO 3: CACCIATORE DI ERRORI --- */
+        function startBugGame() {
+            showSubgame('subgame-bug');
+            currentBugIndex = 0;
+            loadBugSentence();
+        }
+
+        function loadBugSentence() {
+            if(currentBugIndex >= BUG_QUESTIONS.length) {
+                alert("Caccia agli errori completata!");
+                exitGame();
+                return;
+            }
+
+            const bugData = BUG_QUESTIONS[currentBugIndex];
+            document.getElementById('bug-count').innerText = `Frase ${currentBugIndex + 1} / ${BUG_QUESTIONS.length}`;
+            document.getElementById('bug-sentence-box').innerText = `"${bugData.sentence}"`;
+
+            const wordsContainer = document.getElementById('bug-sentence-words');
+            wordsContainer.innerHTML = bugData.words.map((w, idx) => `
+                <button onclick="submitBugWord(${idx})" class="px-3 py-2 rounded-xl bg-cyberDark border border-cyberBorder text-white font-bold text-xs hover:border-neonRed transition">
+                    ${w}
+                </button>
+            `).join('');
+
+            document.getElementById('bug-game-feedback').classList.add('hidden');
+        }
+
+        function submitBugWord(idx) {
+            state.stats.bugTotal++;
+            const bugData = BUG_QUESTIONS[currentBugIndex];
+            const feedback = document.getElementById('bug-game-feedback');
+            feedback.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-400', 'bg-rose-500/20', 'text-rose-400');
+
+            if(idx === bugData.wrongIdx) {
+                state.stats.bugCorrect++;
+                addEXP(20);
+                feedback.classList.add('bg-emerald-500/20', 'text-emerald-400');
+                feedback.innerText = `🎯 Trovato! ${bugData.explain}`;
+            } else {
+                feedback.classList.add('bg-rose-500/20', 'text-rose-400');
+                feedback.innerText = `❌ Non è questa la parola sbagliata. ${bugData.explain}`;
+            }
+
+            setTimeout(() => {
+                currentBugIndex++;
+                loadBugSentence();
+            }, 2500);
+        }
+
+        /* --- GIOCO 4: SPEED DUEL 9 PARTI --- */
+        function startDuelGame() {
+            showSubgame('subgame-duel');
+            duelScore = 0;
+            duelTimeLeft = 30;
+            document.getElementById('duel-score').innerText = `Score: ${duelScore}`;
+            loadDuelWord();
+
+            clearInterval(duelTimerInterval);
+            duelTimerInterval = setInterval(() => {
+                duelTimeLeft--;
+                document.getElementById('duel-timer').innerText = `Tempo: ${duelTimeLeft}s`;
+                if(duelTimeLeft <= 0) {
+                    clearInterval(duelTimerInterval);
+                    alert(`Speed Duel Terminato! Punteggio finale: ${duelScore}`);
+                    exitGame();
+                }
+            }, 1000);
+        }
+
+        function loadDuelWord() {
+            const randomItem = DUEL_WORDS[Math.floor(Math.random() * DUEL_WORDS.length)];
+            document.getElementById('duel-target-word').innerText = `"${randomItem.word}"`;
+            
+            const options = ["Articolo", "Nome", "Aggettivo", "Pronome", "Verbo", "Preposizione", "Avverbio", "Congiunzione", "Interiezione"];
+            const optsContainer = document.getElementById('duel-options');
+            
+            optsContainer.innerHTML = options.map(opt => `
+                <button onclick="submitDuelAnswer('${opt}', '${randomItem.type}')" class="p-2.5 rounded-xl bg-cyberDark border border-cyberBorder hover:border-neonCyan text-white text-xs font-bold transition">
+                    ${opt}
+                </button>
+            `).join('');
+
+            document.getElementById('duel-feedback').classList.add('hidden');
+        }
+
+        function submitDuelAnswer(userType, correctType) {
+            state.stats.duelTotal++;
+            const feedback = document.getElementById('duel-feedback');
+            feedback.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-400', 'bg-rose-500/20', 'text-rose-400');
+
+            if(userType === correctType) {
+                state.stats.duelCorrect++;
+                duelScore += 10;
+                addEXP(8);
+                document.getElementById('duel-score').innerText = `Score: ${duelScore}`;
+                feedback.classList.add('bg-emerald-500/20', 'text-emerald-400');
+                feedback.innerText = "⚡ Veloce ed Esatto!";
+            } else {
+                feedback.classList.add('bg-rose-500/20', 'text-rose-400');
+                feedback.innerText = `❌ Sbagliato! Era ${correctType}.`;
+            }
+
+            setTimeout(loadDuelWord, 800);
+        }
+
+        /* --- HELPER CONTAINER GIOCHI --- */
+        function showSubgame(subgameId) {
+            document.getElementById('games-menu').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+            document.querySelectorAll('#game-container > div').forEach(d => d.classList.add('hidden'));
+            document.getElementById(subgameId).classList.remove('hidden');
+        }
+
+        function exitGame() {
+            clearInterval(quizTimerInterval);
+            clearInterval(duelTimerInterval);
+            document.getElementById('game-container').classList.add('hidden');
+            document.getElementById('games-menu').classList.remove('hidden');
+        }
+
+        /* --- UPDATE REPORT DOCENTE --- */
+        function updateReportUI() {
+            const totQ = state.stats.quizTotal + state.stats.sortTotal + state.stats.labTotal + state.stats.bugTotal + state.stats.duelTotal;
+            const totC = state.stats.quizCorrect + state.stats.sortCorrect + state.stats.labCorrect + state.stats.bugCorrect + state.stats.duelCorrect;
+            const accuracy = totQ > 0 ? Math.round((totC / totQ) * 100) : 0;
+
+            const quizP = state.stats.quizTotal > 0 ? Math.round((state.stats.quizCorrect / state.stats.quizTotal) * 100) : 0;
+            const sortP = state.stats.sortTotal > 0 ? Math.round((state.stats.sortCorrect / state.stats.sortTotal) * 100) : 0;
+            const labP = state.stats.labTotal > 0 ? Math.round((state.stats.labCorrect / state.stats.labTotal) * 100) : 0;
+            const speedP = (state.stats.bugTotal + state.stats.duelTotal) > 0 ? Math.round(((state.stats.bugCorrect + state.stats.duelCorrect) / (state.stats.bugTotal + state.stats.duelTotal)) * 100) : 0;
+
+            document.getElementById('report-total-exp').innerText = state.user.exp;
+            document.getElementById('report-level').innerText = `Liv. ${state.user.level} - ${document.getElementById('dash-level-title').innerText}`;
+            document.getElementById('report-accuracy').innerText = `${accuracy}%`;
+
+            document.getElementById('report-modi-perc').innerText = `${quizP}%`;
+            document.getElementById('report-modi-bar').style.width = `${quizP}%`;
+
+            document.getElementById('report-forme-perc').innerText = `${sortP}%`;
+            document.getElementById('report-forme-bar').style.width = `${sortP}%`;
+
+            document.getElementById('report-lab-perc').innerText = `${labP}%`;
+            document.getElementById('report-lab-bar').style.width = `${labP}%`;
+
+            document.getElementById('report-speed-perc').innerText = `${speedP}%`;
+            document.getElementById('report-speed-bar').style.width = `${speedP}%`;
+
+            const evalEl = document.getElementById('report-evaluation-text');
+            if (accuracy >= 85) {
+                evalEl.innerText = `Lo studente ${state.user.nome} ${state.user.cognome} della classe ${state.user.classe} dimostra una padronanza ECCELLENTE di tutti gli argomenti di 2ª media (modi, tempi, forme verbali e analisi grammaticale delle 9 parti del discorso). Percentuale complessiva di successo: ${accuracy}%.`;
+            } else if (accuracy >= 65) {
+                evalEl.innerText = `Lo studente ${state.user.nome} ${state.user.cognome} della classe ${state.user.classe} possiede una BUONA preparazione grammaticale generale. Si consiglia un piccolo ripasso focalizzato sulla distinzione tra forme riflessive apparenti e pronominali.`;
+            } else {
+                evalEl.innerText = `Lo studente ${state.user.nome} ${state.user.cognome} della classe ${state.user.classe} necessita di consolidare le basi grammaticali. Si suggerisce di consultare attentamente la sezione di ripasso enciclopedico dell'applicazione.`;
+            }
+        }
+    </script>
+</body>
+</html>
