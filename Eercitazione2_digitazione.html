@@ -1,0 +1,3293 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DattiloLab - Avventura sulla Tastiera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f1f5f9;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 22px 22px;
+            overflow-x: hidden;
+        }
+
+        /* Tasti meccanici tastiera virtuale */
+        .key-cap {
+            transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.12s ease;
+            box-shadow: 0 4px 0 rgba(15, 23, 42, 0.22);
+            user-select: none;
+        }
+        .key-cap:active, .key-pressed {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 rgba(15, 23, 42, 0.22);
+        }
+
+        /* Colori didattici per le 8 dita */
+        .finger-l-pinky  { background-color: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+        .finger-l-ring   { background-color: #ffedd5; border-color: #fdba74; color: #9a3412; }
+        .finger-l-middle { background-color: #fef9c3; border-color: #fde047; color: #854d0e; }
+        .finger-l-index  { background-color: #dcfce7; border-color: #86efac; color: #166534; }
+
+        .finger-r-index  { background-color: #ccfbf1; border-color: #5eead4; color: #115e59; }
+        .finger-r-middle { background-color: #e0f2fe; border-color: #7dd3fc; color: #075985; }
+        .finger-r-ring   { background-color: #e0e7ff; border-color: #a5b4fc; color: #3730a3; }
+        .finger-r-pinky  { background-color: #f3e8ff; border-color: #d8b4fe; color: #6b21a8; }
+
+        .key-disabled {
+            background-color: #e2e8f0 !important;
+            border-color: #cbd5e1 !important;
+            color: #94a3b8 !important;
+            opacity: 0.45;
+            box-shadow: 0 2px 0 rgba(15, 23, 42, 0.08);
+        }
+
+        .key-target {
+            background-color: #2563eb !important;
+            border-color: #1d4ed8 !important;
+            color: #ffffff !important;
+            transform: scale(1.07);
+            box-shadow: 0 0 16px rgba(37, 99, 235, 0.7), 0 4px 0 #1e3a8a !important;
+            z-index: 10;
+        }
+
+        .key-blind-hidden .key-label {
+            opacity: 0;
+        }
+
+        .key-feedback-ok {
+            background-color: #16a34a !important;
+            border-color: #15803d !important;
+            color: #ffffff !important;
+            transform: translateY(3px);
+        }
+
+        .key-feedback-err {
+            background-color: #dc2626 !important;
+            border-color: #b91c1c !important;
+            color: #ffffff !important;
+            transform: translateY(3px);
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .animate-soft-pulse {
+            animation: pulseGlow 1.4s infinite ease-in-out;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #print-report-area, #print-report-area * { visibility: visible; }
+            #print-report-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: #ffffff;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- ==================== BARRA DI NAVIGAZIONE PRINCIPALE ==================== -->
+    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-sm no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <!-- Brand -->
+            <button type="button" data-nav="profile" class="flex items-center gap-3 text-left group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <rect x="2" y="6" width="20" height="12" rx="2" />
+                        <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M10 14h4M18 14h.01" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="font-black text-xl tracking-tight text-slate-900 leading-none">Dattilo<span class="text-indigo-600">Lab</span></div>
+                    <div class="text-xs text-slate-500 font-medium mt-0.5">Scuola Media • Tastiera & Visuospazialità</div>
+                </div>
+            </button>
+
+            <!-- Tabs di Navigazione Sempre Attivi -->
+            <nav class="flex flex-wrap items-center gap-1.5 sm:gap-2" aria-label="Menu principale">
+                <button type="button" data-nav="profile" id="nav-tab-profile" class="nav-tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm">
+                    <span>👤</span>
+                    <span>1. Profilo</span>
+                </button>
+                <button type="button" data-nav="tutorial" id="nav-tab-tutorial" class="nav-tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">
+                    <span>📖</span>
+                    <span>2. Guida & Postura</span>
+                </button>
+                <button type="button" data-nav="games" id="nav-tab-games" class="nav-tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700">
+                    <span>🎮</span>
+                    <span>3. I 4 Giochi</span>
+                </button>
+                <button type="button" data-nav="copytext" id="nav-tab-copytext" class="nav-tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-slate-100 text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+                    <span>📝</span>
+                    <span>4. Copia Testo</span>
+                </button>
+                <button type="button" id="btn-open-teacher" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-slate-800 text-white hover:bg-slate-900 shadow-sm">
+                    <span>🔐</span>
+                    <span>Area Docente</span>
+                </button>
+            </nav>
+
+            <!-- Badge Studente Attivo + Audio -->
+            <div class="flex items-center gap-2">
+                <div id="header-student-badge" class="hidden sm:flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-800">
+                    <span id="badge-student-name">Studente Ospite</span>
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-600 text-white" id="badge-student-class">1^ A</span>
+                </div>
+                <button type="button" id="btn-toggle-audio" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold transition" title="Attiva/Disattiva Suoni">
+                    <span id="audio-icon">🔊</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== CONTENITORE PRINCIPALE ==================== -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 flex flex-col">
+
+        <!-- ==================== VISTA 1: PROFILO STUDENTE & SCELTA RAPIDA ==================== -->
+        <section id="view-profile" class="space-y-6">
+            <div class="bg-white rounded-3xl shadow-md border border-slate-200 p-6 md:p-8">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div class="lg:col-span-5 space-y-3">
+                        <span class="inline-block px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-extrabold uppercase tracking-wider">Benvenuto su DattiloLab</span>
+                        <h1 class="text-2xl md:text-3xl font-black text-slate-900 leading-tight">Prepara le dita e diventa un fulmine sulla tastiera! ⚡</h1>
+                        <p class="text-slate-600 text-sm leading-relaxed">
+                            Inserisci il tuo nome, seleziona la tua <strong>classe (1^, 2^, 3^)</strong> e la tua <strong>sezione (A – G)</strong>. Tutti i tuoi punteggi verranno salvati automaticamente nel registro del professore.
+                        </p>
+                        <div class="pt-2 flex flex-wrap gap-2 text-xs">
+                            <span id="summary-case" class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold border border-blue-200">Solo Minuscolo</span>
+                            <span id="summary-keys" class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">26 tasti attivi</span>
+                            <span id="summary-speed" class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 font-bold border border-amber-200">Velocità: Principiante</span>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-7 bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-200 space-y-5">
+                        <!-- Nome e Cognome -->
+                        <div>
+                            <label for="student-name-input" class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Nome e Cognome dello Studente</label>
+                            <input type="text" id="student-name-input" placeholder="Scrivi qui il tuo nome (es. Marco Rossi)..." autocomplete="off"
+                                class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200 outline-none font-bold text-base text-slate-900 bg-white transition">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                            <!-- Pulsanti Classe 1^ 2^ 3^ -->
+                            <div class="sm:col-span-5">
+                                <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Classe</label>
+                                <div class="grid grid-cols-3 gap-2" id="class-buttons-group">
+                                    <button type="button" data-class="1^" class="class-choice-btn py-3 rounded-xl font-black text-sm border-2 border-indigo-600 bg-indigo-600 text-white shadow-sm transition">1^</button>
+                                    <button type="button" data-class="2^" class="class-choice-btn py-3 rounded-xl font-black text-sm border-2 border-slate-300 bg-white text-slate-700 hover:border-indigo-400 transition">2^</button>
+                                    <button type="button" data-class="3^" class="class-choice-btn py-3 rounded-xl font-black text-sm border-2 border-slate-300 bg-white text-slate-700 hover:border-indigo-400 transition">3^</button>
+                                </div>
+                            </div>
+
+                            <!-- Pulsanti Sezione A - G -->
+                            <div class="sm:col-span-7">
+                                <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Sezione (A – G)</label>
+                                <div class="grid grid-cols-7 gap-1.5" id="section-buttons-group">
+                                    <button type="button" data-section="A" class="section-choice-btn py-3 rounded-xl font-black text-xs sm:text-sm border-2 border-indigo-600 bg-indigo-600 text-white shadow-sm transition">A</button>
+                                    <button type="button" data-section="B" class="section-choice-btn py-3 rounded-xl font-black text-xs sm:text-sm border-2 border-slate-300 bg-white text-slate-700 hover:border-indigo-400 transition">B</button>
+                                    <button type="button" data-section="C" class="section-choice-btn py-3 rounded-xl font-black text-xs sm:text-sm border-2 border-slate-300 bg-white text-slate-700 hover:border-indigo-400 transition">C</button>
+                                    <button type="button" data-section="D" class="section-choice-btn py-3 rounded-xl font-black text-xs sm:text-sm border-2 border-slate-300 bg-white text-slate-700 hover:border-indigo-400 transition">D</button>
+                                    <button type="button" data-section="E" class="section-choice-btn py-3 rounded-xl font-black text-xs sm:text-sm border-2 border-slate-300 bg-white text-slate-700 hover:border-indigo-400 transition">E</button>
+                                    <button type="button" data-section="F" class="section-choice-btn py-3 rounded-xl font-black text-xs sm:text-sm border-2 border-slate-300 bg-white text-slate-700 hover:border-indigo-400 transition">F</button>
+                                    <button type="button" data-section="G" class="section-choice-btn py-3 rounded-xl font-black text-xs sm:text-sm border-2 border-slate-300 bg-white text-slate-700 hover:border-indigo-400 transition">G</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pulsanti Azione Principali -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                            <button type="button" id="btn-go-tutorial" class="py-3.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-200 transition flex items-center justify-center gap-1.5">
+                                <span>📖</span>
+                                <span>Guida & Postura</span>
+                            </button>
+                            <button type="button" id="btn-go-games" class="py-3.5 px-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-indigo-200 transition flex items-center justify-center gap-1.5">
+                                <span>🚀</span>
+                                <span>I 4 Giochi</span>
+                            </button>
+                            <button type="button" id="btn-go-copytext" class="py-3.5 px-3 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-teal-200 transition flex items-center justify-center gap-1.5">
+                                <span>📝</span>
+                                <span>Copia Testo</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anteprima veloce dei 4 Giochi anche dalla schermata iniziale -->
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                    <h2 class="font-extrabold text-lg text-slate-900">Accesso Diretto ai 4 Giochi</h2>
+                    <span class="text-xs text-slate-500">Puoi cliccare direttamente su un gioco per iniziare subito!</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="quick-games-grid"></div>
+            </div>
+        </section>
+
+        <!-- ==================== VISTA 2: GUIDA & POSTURA (TUTORIAL INTERATTIVO) ==================== -->
+        <section id="view-tutorial" class="hidden space-y-6">
+            <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white rounded-3xl p-6 md:p-8 shadow-lg flex flex-wrap items-center justify-between gap-4">
+                <div class="max-w-2xl space-y-1.5">
+                    <span class="px-3 py-1 rounded-full bg-white/20 text-white text-xs font-extrabold uppercase tracking-wider">Tutorial Interattivo</span>
+                    <h2 class="text-2xl md:text-3xl font-black">Come usare la Tastiera & Posizione delle Mani</h2>
+                    <p class="text-emerald-50 text-sm">Impara a posizionare le 10 dita sulla riga base e a scrivere senza guardare i tasti!</p>
+                </div>
+                <button type="button" data-nav="games" class="px-5 py-3 rounded-2xl bg-white text-teal-900 hover:bg-emerald-50 font-extrabold text-sm shadow-md transition flex items-center gap-2">
+                    <span>🎮</span> <span>Vai ai 4 Giochi →</span>
+                </button>
+            </div>
+
+            <!-- Postura & Regole Tasti Speciali -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Postura Ergonomica -->
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <h3 class="font-extrabold text-lg text-slate-900 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">🪑</span>
+                        <span>1. Postura Ergonomica alla Scrivania</span>
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <div class="sm:col-span-5 flex justify-center">
+                            <svg viewBox="0 0 180 180" class="w-36 h-36" aria-label="Schema postura corretta">
+                                <circle cx="90" cy="90" r="82" fill="#e0e7ff" />
+                                <rect x="95" y="105" width="70" height="8" rx="3" fill="#475569" />
+                                <rect x="135" y="65" width="8" height="36" rx="2" fill="#1e293b" />
+                                <rect x="125" y="99" width="24" height="6" rx="2" fill="#334155" />
+                                <line x1="72" y1="45" x2="132" y2="75" stroke="#10b981" stroke-width="2" stroke-dasharray="4 3" />
+                                <rect x="35" y="75" width="8" height="55" rx="4" fill="#64748b" />
+                                <rect x="35" y="122" width="42" height="8" rx="4" fill="#64748b" />
+                                <line x1="55" y1="130" x2="55" y2="160" stroke="#64748b" stroke-width="6" />
+                                <circle cx="62" cy="45" r="14" fill="#4f46e5" />
+                                <path d="M55 62 L55 115 L85 115 L85 155" fill="none" stroke="#4f46e5" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M58 72 L58 100 L108 100" fill="none" stroke="#10b981" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+                                <text x="64" y="93" font-size="11" font-weight="bold" fill="#065f46">90°</text>
+                            </svg>
+                        </div>
+                        <ul class="sm:col-span-7 space-y-2 text-xs sm:text-sm text-slate-700">
+                            <li class="flex items-start gap-2"><span class="text-emerald-600 font-black">✓</span><span><strong>Schiena dritta</strong> appoggiata allo schienale e piedi ben appoggiati a terra.</span></li>
+                            <li class="flex items-start gap-2"><span class="text-emerald-600 font-black">✓</span><span><strong>Gomiti a 90°</strong> e polsi leggermente sollevati, non schiacciati sul tavolo.</span></li>
+                            <li class="flex items-start gap-2"><span class="text-emerald-600 font-black">✓</span><span><strong>Occhi sullo schermo:</strong> usa le stanghette tattili su <strong>F</strong> e <strong>J</strong> per orientarti senza guardare giù.</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Tasti Speciali -->
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <h3 class="font-extrabold text-lg text-slate-900 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">⌨️</span>
+                        <span>2. Uso dei Tasti Speciali</span>
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-1">
+                            <div class="font-extrabold text-amber-900 text-sm">⇧ Maiusc (Shift) Opposto</div>
+                            <p class="text-slate-700">Per fare una maiuscola a sinistra (es. <strong>A</strong>), tieni premuto Shift con il <strong>mignolo destro</strong>, e viceversa!</p>
+                        </div>
+                        <div class="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 space-y-1">
+                            <div class="font-extrabold text-sky-900 text-sm">␣ Barra Spaziatrice</div>
+                            <p class="text-slate-700">Si preme sempre e solo con uno dei due <strong>pollici</strong> senza spostare le altre dita dalla riga base.</p>
+                        </div>
+                        <div class="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 space-y-1">
+                            <div class="font-extrabold text-purple-900 text-sm">↵ Invio & ⌫ Cancella</div>
+                            <p class="text-slate-700">Allunga il <strong>mignolo destro</strong> per premere Invio o Backspace e riportalo subito su <strong>Ò</strong>.</p>
+                        </div>
+                        <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
+                            <div class="font-extrabold text-emerald-900 text-sm">🎯 Precisione prima di tutto</div>
+                            <p class="text-slate-700">Scrivi con ritmo regolare: la velocità arriverà automaticamente quando le dita memorizzano le distanze.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mappa Interattiva delle 8 Dita -->
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h3 class="font-extrabold text-lg text-slate-900">3. Mappa Colorata delle Dita (Riga Base: A S D F — J K L Ò)</h3>
+                        <p class="text-xs text-slate-500">Clicca o passa il mouse su un dito per illuminare i suoi tasti sulla tastiera italiana.</p>
+                    </div>
+                    <button type="button" id="btn-tut-reset-filter" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                        Mostra Tutti i Colori
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2" id="tut-finger-buttons">
+                    <button type="button" data-finger="l-pinky" class="tut-finger-card finger-l-pinky p-2.5 rounded-2xl border-2 text-center transition">
+                        <div class="text-[10px] font-bold uppercase opacity-75">Mano SX</div>
+                        <div class="font-extrabold text-xs">Mignolo</div>
+                        <div class="font-mono text-[11px] font-bold mt-0.5">Q A Z</div>
+                    </button>
+                    <button type="button" data-finger="l-ring" class="tut-finger-card finger-l-ring p-2.5 rounded-2xl border-2 text-center transition">
+                        <div class="text-[10px] font-bold uppercase opacity-75">Mano SX</div>
+                        <div class="font-extrabold text-xs">Anulare</div>
+                        <div class="font-mono text-[11px] font-bold mt-0.5">W S X</div>
+                    </button>
+                    <button type="button" data-finger="l-middle" class="tut-finger-card finger-l-middle p-2.5 rounded-2xl border-2 text-center transition">
+                        <div class="text-[10px] font-bold uppercase opacity-75">Mano SX</div>
+                        <div class="font-extrabold text-xs">Medio</div>
+                        <div class="font-mono text-[11px] font-bold mt-0.5">E D C</div>
+                    </button>
+                    <button type="button" data-finger="l-index" class="tut-finger-card finger-l-index p-2.5 rounded-2xl border-2 text-center transition">
+                        <div class="text-[10px] font-bold uppercase opacity-75">Mano SX</div>
+                        <div class="font-extrabold text-xs">Indice (F)</div>
+                        <div class="font-mono text-[11px] font-bold mt-0.5">R T F G V B</div>
+                    </button>
+                    <button type="button" data-finger="r-index" class="tut-finger-card finger-r-index p-2.5 rounded-2xl border-2 text-center transition">
+                        <div class="text-[10px] font-bold uppercase opacity-75">Mano DX</div>
+                        <div class="font-extrabold text-xs">Indice (J)</div>
+                        <div class="font-mono text-[11px] font-bold mt-0.5">Y U H J N M</div>
+                    </button>
+                    <button type="button" data-finger="r-middle" class="tut-finger-card finger-r-middle p-2.5 rounded-2xl border-2 text-center transition">
+                        <div class="text-[10px] font-bold uppercase opacity-75">Mano DX</div>
+                        <div class="font-extrabold text-xs">Medio</div>
+                        <div class="font-mono text-[11px] font-bold mt-0.5">I K</div>
+                    </button>
+                    <button type="button" data-finger="r-ring" class="tut-finger-card finger-r-ring p-2.5 rounded-2xl border-2 text-center transition">
+                        <div class="text-[10px] font-bold uppercase opacity-75">Mano DX</div>
+                        <div class="font-extrabold text-xs">Anulare</div>
+                        <div class="font-mono text-[11px] font-bold mt-0.5">O L</div>
+                    </button>
+                    <button type="button" data-finger="r-pinky" class="tut-finger-card finger-r-pinky p-2.5 rounded-2xl border-2 text-center transition">
+                        <div class="text-[10px] font-bold uppercase opacity-75">Mano DX</div>
+                        <div class="font-extrabold text-xs">Mignolo</div>
+                        <div class="font-mono text-[11px] font-bold mt-0.5">P È Ò À Ù Ì</div>
+                    </button>
+                </div>
+
+                <div id="tut-finger-caption" class="text-center text-xs sm:text-sm font-bold text-indigo-900 bg-indigo-50 border border-indigo-100 py-2.5 px-4 rounded-xl">
+                    Appoggia gli indici sui tasti guida <strong>F</strong> e <strong>J</strong> (riconoscibili dal trattino in rilievo).
+                </div>
+
+                <div id="tut-keyboard-container" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 max-w-4xl mx-auto space-y-1.5"></div>
+            </div>
+
+            <!-- Riscaldamento Guidato Interattivo -->
+            <div class="bg-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl border-4 border-slate-800 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <span class="px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-extrabold uppercase">4. Riscaldamento Pratico</span>
+                        <h3 class="text-xl font-black mt-1">Prova Subito la Riga Base senza Guardare</h3>
+                        <p class="text-slate-400 text-xs sm:text-sm">Digita i tasti evidenziati sulla tua tastiera fisica (o cliccali qui sotto).</p>
+                    </div>
+                    <button type="button" id="btn-tut-new-warmup" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition">
+                        ↻ Cambia Sequenza
+                    </button>
+                </div>
+
+                <div id="tut-warmup-tiles" class="flex flex-wrap justify-center gap-2.5 py-2"></div>
+
+                <div class="text-center">
+                    <div id="tut-warmup-hint" class="inline-block px-4 py-2 rounded-2xl bg-indigo-600/30 border border-indigo-400/40 text-indigo-200 text-sm font-bold">
+                        Premi il tasto evidenziato in giallo!
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VISTA 3: HUB DEI 4 GIOCHI ==================== -->
+        <section id="view-games" class="hidden space-y-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
+                <div>
+                    <span class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-extrabold uppercase">Scegli la tua Sfida</span>
+                    <h2 class="text-2xl font-black text-slate-900 mt-1">I 4 Giochi di Dattilografia & Visuospazialità</h2>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="text-slate-500 font-semibold">Giocatore:</span>
+                    <span id="hub-player-tag" class="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-800 font-extrabold border border-indigo-200">Studente Ospite • 1^ A</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5" id="hub-games-grid"></div>
+
+            <!-- Ultimi punteggi della sessione -->
+            <div id="recent-scores-panel" class="hidden bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-3">
+                <h3 class="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                    <span>🏆</span> <span>Ultimi Risultati Registrati</span>
+                </h3>
+                <div id="recent-scores-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+            </div>
+        </section>
+
+        <!-- ==================== VISTA 4: AREA STUDENTE - SOLO COPIA TESTO ==================== -->
+        <section id="view-copytext" class="hidden space-y-6">
+            <!-- Banner Intestazione Pulito per lo Studente -->
+            <div class="bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 text-white rounded-3xl p-6 md:p-7 shadow-lg flex flex-wrap items-center justify-between gap-4">
+                <div class="max-w-2xl space-y-1">
+                    <span class="px-3 py-1 rounded-full bg-white/20 text-white text-xs font-extrabold uppercase tracking-wider">Esercitazione Studente</span>
+                    <h2 id="ct-active-title" class="text-2xl md:text-3xl font-black">Esercizio di Copia</h2>
+                    <p class="text-teal-50 text-sm">Leggi attentamente il testo modello qui sotto e ricopialo con precisione nel riquadro di scrittura.</p>
+                </div>
+                <div class="flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2.5 rounded-2xl border border-white/25 text-xs font-bold">
+                    <span>👤</span>
+                    <span id="ct-player-tag">Studente Ospite • 1^ A</span>
+                </div>
+            </div>
+
+            <!-- Area Esecuzione Copia (Esclusivamente Modello + Scrittura) -->
+            <div id="ct-practice-card" class="bg-white rounded-3xl border-2 border-teal-200 p-6 md:p-8 shadow-md space-y-5">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 rounded-xl bg-teal-100 text-teal-800 text-xs font-extrabold uppercase">Testo da Ricopiare</span>
+                        <span id="ct-mode-badge" class="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">Feedback attivo</span>
+                    </div>
+
+                    <!-- KPI Live Copia Testo -->
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div class="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-center min-w-[78px]">
+                            <div class="text-[10px] font-bold uppercase text-slate-400">Progresso</div>
+                            <div id="ct-hud-progress" class="font-mono font-black text-base text-teal-600">0%</div>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-center min-w-[82px]">
+                            <div class="text-[10px] font-bold uppercase text-slate-400">Velocità</div>
+                            <div id="ct-hud-cpm" class="font-mono font-black text-base text-indigo-600">0 <span class="text-[10px]">CPM</span></div>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-center min-w-[76px]">
+                            <div class="text-[10px] font-bold uppercase text-slate-400">Precisione</div>
+                            <div id="ct-hud-acc" class="font-mono font-black text-base text-emerald-600">100%</div>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-center min-w-[72px]">
+                            <div class="text-[10px] font-bold uppercase text-slate-400">Tempo</div>
+                            <div id="ct-hud-time" class="font-mono font-black text-base text-slate-700">0s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra avanzamento -->
+                <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div id="ct-progress-bar" class="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-150" style="width: 0%"></div>
+                </div>
+
+                <!-- Box Modello di Riferimento -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-500">
+                        <span id="ct-guide-caption">Segui il testo modello: il carattere evidenziato in giallo è il prossimo da digitare.</span>
+                        <button type="button" id="btn-ct-restart-typing" class="text-teal-700 hover:underline font-extrabold">↻ Ricomincia da capo</button>
+                    </div>
+                    <div id="ct-reference-display" class="p-5 sm:p-6 rounded-2xl bg-slate-900 text-slate-200 font-mono text-base sm:text-lg leading-relaxed whitespace-pre-wrap break-words border-2 border-slate-800 min-h-[120px] select-none"></div>
+                </div>
+
+                <!-- Box Scrittura dello Studente -->
+                <div class="space-y-1.5">
+                    <label for="ct-student-input" class="block text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                        Scrivi qui sotto il testo copiato:
+                    </label>
+                    <textarea id="ct-student-input" rows="5" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+                        placeholder="Clicca qui e inizia a ricopiare il testo mostrato sopra..."
+                        class="w-full p-4 sm:p-5 rounded-2xl border-2 border-teal-400 focus:border-teal-600 focus:ring-4 focus:ring-teal-100 outline-none font-mono text-base sm:text-lg text-slate-900 bg-teal-50/30 focus:bg-white transition leading-relaxed"></textarea>
+                </div>
+
+                <!-- Banner Completamento Esercizio -->
+                <div id="ct-completed-banner" class="hidden bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="font-black text-lg text-emerald-900">🎉 Ottimo lavoro! Hai ricopiato tutto il testo!</div>
+                        <p id="ct-completed-summary" class="text-xs sm:text-sm text-emerald-800 font-semibold">Risultato salvato automaticamente nel registro docente.</p>
+                    </div>
+                    <button type="button" id="btn-ct-repeat-after-win" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow-sm transition">
+                        Ripeti Esercizio ↻
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VISTA 5: ARENA DI GIOCO ATTIVA ==================== -->
+        <section id="view-arena" class="hidden flex-1 flex flex-col space-y-4">
+            <!-- Header Arena & HUD -->
+            <div class="bg-white rounded-2xl border border-slate-200 px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <button type="button" id="btn-exit-arena" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition flex items-center gap-1.5">
+                        <span>←</span> <span>Giochi</span>
+                    </button>
+                    <div>
+                        <h2 id="arena-game-title" class="font-black text-lg text-slate-900 leading-tight">Gioco</h2>
+                        <p id="arena-game-desc" class="text-xs text-slate-500">Descrizione</p>
+                    </div>
+                </div>
+
+                <!-- Indicatori Numerici Live -->
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <div class="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-center min-w-[68px]">
+                        <div class="text-[10px] font-bold uppercase text-slate-400">Punti</div>
+                        <div id="hud-score" class="font-mono font-black text-base sm:text-lg text-indigo-600">0</div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-center min-w-[78px]">
+                        <div class="text-[10px] font-bold uppercase text-slate-400">Velocità</div>
+                        <div id="hud-cpm" class="font-mono font-black text-base sm:text-lg text-emerald-600">0 <span class="text-[10px]">CPM</span></div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-center min-w-[72px]">
+                        <div class="text-[10px] font-bold uppercase text-slate-400">Precisione</div>
+                        <div id="hud-accuracy" class="font-mono font-black text-base sm:text-lg text-amber-600">100%</div>
+                    </div>
+                    <div id="hud-shields-box" class="hidden bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-center min-w-[85px]">
+                        <div class="text-[10px] font-bold uppercase text-slate-400">Scudi</div>
+                        <div id="hud-shields" class="font-mono font-bold text-sm text-rose-600">❤️❤️❤️❤️❤️</div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-center min-w-[74px]">
+                        <div class="text-[10px] font-bold uppercase text-slate-400">Tempo</div>
+                        <div id="hud-timer" class="font-mono font-black text-base sm:text-lg text-rose-600">60s</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra visiva avanzamento Timer -->
+            <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden shadow-inner">
+                <div id="arena-timer-bar" class="h-full bg-gradient-to-r from-emerald-500 via-indigo-500 to-blue-500 transition-all duration-300" style="width: 100%"></div>
+            </div>
+
+            <!-- Schermo Interattivo del Gioco -->
+            <div id="arena-stage" class="bg-slate-900 rounded-3xl border-4 border-slate-800 shadow-xl relative overflow-hidden min-h-[260px] md:min-h-[290px] flex flex-col justify-center">
+                <div id="arena-content" class="flex-1 flex flex-col items-center justify-center p-4 relative z-10"></div>
+            </div>
+
+            <!-- Tastiera Virtuale Interattiva Live -->
+            <div class="bg-white rounded-3xl border border-slate-200 p-3 sm:p-5 shadow-md">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5 px-1 text-xs font-semibold text-slate-500">
+                    <div class="flex items-center gap-4">
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-emerald-200 border border-emerald-400 inline-block"></span> Mano Sinistra</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-sky-200 border border-sky-400 inline-block"></span> Mano Destra</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-blue-600 inline-block"></span> Prossimo Tasto</span>
+                    </div>
+                    <span class="hidden sm:inline">Indici sui tasti guida <strong class="font-mono bg-slate-100 px-1.5 py-0.5 rounded border">F</strong> e <strong class="font-mono bg-slate-100 px-1.5 py-0.5 rounded border">J</strong></span>
+                </div>
+                <div id="arena-keyboard" class="max-w-4xl mx-auto space-y-1.5"></div>
+            </div>
+        </section>
+
+        <!-- ==================== VISTA 6: AREA DOCENTE (PROTETTA DA PIN) ==================== -->
+        <section id="view-teacher" class="hidden space-y-6">
+            <div class="bg-slate-900 text-white rounded-3xl p-6 shadow-lg flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <span class="px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-extrabold uppercase">Pannello Docente</span>
+                    <h2 class="text-2xl font-black mt-1">Gestione Testi, Esercizi, Timer & Report Studenti</h2>
+                    <p class="text-slate-400 text-sm">Prepara i brani da copiare (.JSON / .TXT), configura i giochi ed esporta i risultati della classe.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" data-nav="copytext" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm transition">
+                        📝 Vista Studente (Copia)
+                    </button>
+                    <button type="button" data-nav="profile" class="px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-sm transition">
+                        Torna agli Studenti
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs Area Docente -->
+            <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+                <button type="button" data-teacher-tab="reports" id="ttab-btn-reports" class="teacher-tab-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-sm transition">
+                    📊 Report & Esportazione
+                </button>
+                <button type="button" data-teacher-tab="copytext" id="ttab-btn-copytext" class="teacher-tab-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition">
+                    📝 Testo da Copiare & JSON/TXT
+                </button>
+                <button type="button" data-teacher-tab="config" id="ttab-btn-config" class="teacher-tab-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition">
+                    ⚙️ Configura Giochi & Timer
+                </button>
+                <button type="button" data-teacher-tab="pin" id="ttab-btn-pin" class="teacher-tab-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition">
+                    🔐 Cambia PIN
+                </button>
+            </div>
+
+            <!-- TAB A: REPORT E ESPORTAZIONE -->
+            <div id="teacher-panel-reports" class="space-y-5">
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-wrap items-end justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div>
+                            <label for="rep-filter-class" class="block text-xs font-bold text-slate-500 uppercase mb-1">Classe</label>
+                            <select id="rep-filter-class" class="px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-slate-50">
+                                <option value="ALL">Tutte le classi</option>
+                                <option value="1^">1^</option>
+                                <option value="2^">2^</option>
+                                <option value="3^">3^</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="rep-filter-section" class="block text-xs font-bold text-slate-500 uppercase mb-1">Sezione</label>
+                            <select id="rep-filter-section" class="px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-slate-50">
+                                <option value="ALL">Tutte (A-G)</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                                <option value="E">E</option>
+                                <option value="F">F</option>
+                                <option value="G">G</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="rep-filter-game" class="block text-xs font-bold text-slate-500 uppercase mb-1">Attività</label>
+                            <select id="rep-filter-game" class="px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-slate-50">
+                                <option value="ALL">Tutte le attività</option>
+                                <option value="Pioggia di Meteore">1. Pioggia di Meteore</option>
+                                <option value="Tastiera Cieca">2. Tastiera Cieca</option>
+                                <option value="Corsa dei Robot">3. Corsa dei Robot</option>
+                                <option value="Catena Ritmica">4. Catena Ritmica</option>
+                                <option value="Copia Testo">5. Copia Testo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="rep-filter-search" class="block text-xs font-bold text-slate-500 uppercase mb-1">Cerca Studente</label>
+                            <input type="text" id="rep-filter-search" placeholder="Nome..." class="px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-slate-50 w-40">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" id="btn-export-csv" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition flex items-center gap-2">
+                            <span>📥</span> <span>Scarica CSV (Excel)</span>
+                        </button>
+                        <button type="button" id="btn-print-report" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-sm transition flex items-center gap-2">
+                            <span>🖨️</span> <span>Stampa / Salva PDF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Riepilogo KPI -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-bold text-slate-400 uppercase">Prove Registrate</div>
+                        <div id="kpi-sessions" class="text-2xl font-black text-slate-900 mt-1">0</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-bold text-slate-400 uppercase">Velocità Media</div>
+                        <div id="kpi-cpm" class="text-2xl font-black text-indigo-600 mt-1">0 CPM</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-bold text-slate-400 uppercase">Precisione Media</div>
+                        <div id="kpi-acc" class="text-2xl font-black text-emerald-600 mt-1">0%</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-bold text-slate-400 uppercase">Studenti Distinti</div>
+                        <div id="kpi-students" class="text-2xl font-black text-amber-600 mt-1">0</div>
+                    </div>
+                </div>
+
+                <!-- Tabella Report -->
+                <div id="print-report-area" class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 class="font-extrabold text-lg text-slate-900">Registro Risultati DattiloLab</h3>
+                            <p class="text-xs text-slate-500">Storico dettagliato delle sessioni degli studenti</p>
+                        </div>
+                        <button type="button" id="btn-clear-reports" class="no-print text-xs font-bold text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition">
+                            🗑️ Svuota Registro
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-extrabold uppercase text-slate-500">
+                                    <th class="py-3.5 px-4">Data / Ora</th>
+                                    <th class="py-3.5 px-4">Studente</th>
+                                    <th class="py-3.5 px-4">Classe</th>
+                                    <th class="py-3.5 px-4">Attività</th>
+                                    <th class="py-3.5 px-4">Punti</th>
+                                    <th class="py-3.5 px-4">Velocità</th>
+                                    <th class="py-3.5 px-4">Precisione</th>
+                                    <th class="py-3.5 px-4">Tasti da Ripassare</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reports-tbody" class="divide-y divide-slate-100 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB B (NUOVO): GESTIONE TESTO DA COPIARE, CARICAMENTO FILE (.JSON / .TXT), IMPOSTAZIONI E DOWNLOAD -->
+            <div id="teacher-panel-copytext" class="hidden space-y-6">
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-extrabold text-lg text-slate-900 flex items-center gap-2">
+                                <span class="w-8 h-8 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center">📝</span>
+                                <span>Configurazione Esercizio "Copia Testo" (Solo Docente)</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Incolla il brano da assegnare allo studente, carica un file <strong>.JSON</strong> o <strong>.TXT</strong>, oppure scarica l'esercizio.</p>
+                        </div>
+
+                        <!-- Pulsanti Import / Export File -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" id="btn-ct-export-json" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5">
+                                <span>💾</span>
+                                <span>Scarica Esercizio (.JSON)</span>
+                            </button>
+                            <button type="button" id="btn-ct-import-file" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5">
+                                <span>📂</span>
+                                <span>Carica File (.JSON / .TXT)</span>
+                            </button>
+                            <input type="file" id="ct-file-input" accept=".json,.txt,application/json,text/plain" class="hidden">
+                        </div>
+                    </div>
+
+                    <!-- Titolo + Impostazioni Modalità di Copiatura + Testo Sorgente -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="lg:col-span-4 space-y-4">
+                            <div>
+                                <label for="ct-title-input" class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1">Titolo Esercizio</label>
+                                <input type="text" id="ct-title-input" placeholder="Es. Brano di Storia - Capitolo 2"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-300 focus:border-teal-600 outline-none font-bold text-sm text-slate-900 bg-slate-50 focus:bg-white transition">
+                            </div>
+
+                            <!-- Impostazioni di feedback per lo studente -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                                <div class="text-xs font-extrabold uppercase tracking-wider text-slate-600">Impostazioni Feedback Studente</div>
+
+                                <label class="flex items-start gap-2.5 cursor-pointer">
+                                    <input type="checkbox" id="ct-opt-show-errors" checked class="mt-0.5 w-4 h-4 rounded text-teal-600 focus:ring-teal-500">
+                                    <span class="text-xs text-slate-700">
+                                        <strong>Evidenzia errori in rosso</strong><br>
+                                        <span class="text-slate-500">Segnala subito i caratteri digitati in modo errato.</span>
+                                    </span>
+                                </label>
+
+                                <label class="flex items-start gap-2.5 cursor-pointer">
+                                    <input type="checkbox" id="ct-opt-highlight-next" checked class="mt-0.5 w-4 h-4 rounded text-teal-600 focus:ring-teal-500">
+                                    <span class="text-xs text-slate-700">
+                                        <strong>Cursore giallo sul prossimo carattere</strong><br>
+                                        <span class="text-slate-500">Aiuta lo studente a non perdere il segno durante la lettura.</span>
+                                    </span>
+                                </label>
+
+                                <label class="flex items-start gap-2.5 cursor-pointer">
+                                    <input type="checkbox" id="ct-opt-strict-case" checked class="mt-0.5 w-4 h-4 rounded text-teal-600 focus:ring-teal-500">
+                                    <span class="text-xs text-slate-700">
+                                        <strong>Distinzione Maiuscole / Minuscole</strong><br>
+                                        <span class="text-slate-500">Richiede l'uso corretto del tasto Maiusc (Shift).</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-8 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="ct-source-textarea" class="block text-xs font-extrabold uppercase tracking-wider text-slate-500">Testo Sorgente da Assegnare allo Studente</label>
+                                <span id="ct-char-count" class="text-xs font-mono font-bold text-slate-400">0 caratteri</span>
+                            </div>
+                            <textarea id="ct-source-textarea" rows="7" placeholder="Incolla o scrivi qui il testo che il ragazzo dovrà ricopiare..."
+                                class="w-full p-4 rounded-2xl border-2 border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-100 outline-none font-sans text-sm sm:text-base text-slate-900 bg-slate-50 focus:bg-white transition leading-relaxed"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Barra Azioni Docente -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" id="btn-ct-sample" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                                ✨ Inserisci Brano di Esempio
+                            </button>
+                            <button type="button" id="btn-ct-clear" class="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition">
+                                🗑️ Svuota Campo
+                            </button>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" id="btn-ct-apply" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5">
+                                <span>💾</span>
+                                <span>Salva & Assegna allo Studente</span>
+                            </button>
+                            <button type="button" id="btn-ct-apply-and-go" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5">
+                                <span>▶️</span>
+                                <span>Salva e Apri Vista Studente</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Riquadro Download Elaborato / Risultato Studente (Solo Docente) -->
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                                <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">📄</span>
+                                <span>Ultimo Elaborato Scritto dallo Studente</span>
+                            </h3>
+                            <p id="ct-teacher-submission-meta" class="text-xs text-slate-500 mt-0.5">Nessun elaborato ancora digitato nella sessione corrente.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" id="btn-ct-download-submission-txt" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5">
+                                <span>📥</span>
+                                <span>Scarica Elaborato (.TXT)</span>
+                            </button>
+                            <button type="button" id="btn-ct-download-submission-json" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5">
+                                <span>📥</span>
+                                <span>Scarica Report Copia (.JSON)</span>
+                            </button>
+                        </div>
+                    </div>
+                    <pre id="ct-teacher-submission-preview" class="p-4 rounded-2xl bg-slate-50 border border-slate-200 font-mono text-xs text-slate-700 whitespace-pre-wrap max-h-44 overflow-y-auto">In attesa che lo studente inizi a scrivere nella sezione "4. Copia Testo"...</pre>
+                </div>
+            </div>
+
+            <!-- TAB C: CONFIGURA ESERCIZI & TIMER -->
+            <div id="teacher-panel-config" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Colonna 1: Maiuscole/Minuscole, Velocità e Timer dei 4 Giochi -->
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-5">
+                    <div>
+                        <h3 class="font-extrabold text-base text-slate-900 mb-2">1. Formato Caratteri (Giochi)</h3>
+                        <div class="grid grid-cols-3 gap-1.5" id="cfg-case-group">
+                            <button type="button" data-case="lower" class="cfg-case-btn py-2.5 px-2 rounded-xl border-2 font-bold text-xs transition">abc Minuscolo</button>
+                            <button type="button" data-case="upper" class="cfg-case-btn py-2.5 px-2 rounded-xl border-2 font-bold text-xs transition">ABC Maiuscolo</button>
+                            <button type="button" data-case="mixed" class="cfg-case-btn py-2.5 px-2 rounded-xl border-2 font-bold text-xs transition">AbC Misto</button>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100">
+                        <h3 class="font-extrabold text-base text-slate-900 mb-2">2. Velocità Giochi</h3>
+                        <div class="grid grid-cols-3 gap-1.5" id="cfg-diff-group">
+                            <button type="button" data-diff="easy" class="cfg-diff-btn py-2.5 px-2 rounded-xl border-2 font-bold text-xs transition">🐢 Lento</button>
+                            <button type="button" data-diff="medium" class="cfg-diff-btn py-2.5 px-2 rounded-xl border-2 font-bold text-xs transition">🐇 Medio</button>
+                            <button type="button" data-diff="hard" class="cfg-diff-btn py-2.5 px-2 rounded-xl border-2 font-bold text-xs transition">🚀 Veloce</button>
+                        </div>
+                    </div>
+
+                    <!-- Timer Individuale per Ognuno dei 4 Giochi -->
+                    <div class="pt-3 border-t border-slate-100 space-y-3">
+                        <div>
+                            <h3 class="font-extrabold text-base text-slate-900">3. Timer dei 4 Giochi (secondi)</h3>
+                            <p class="text-xs text-slate-500">Modifica la durata (15s – 300s) di ogni singolo gioco.</p>
+                        </div>
+
+                        <div class="flex flex-wrap gap-1.5" id="cfg-timer-presets">
+                            <span class="text-[11px] font-bold text-slate-400 self-center mr-1">Imposta tutti:</span>
+                            <button type="button" data-preset-sec="30" class="timer-preset-btn px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-700 font-bold text-xs">30s</button>
+                            <button type="button" data-preset-sec="60" class="timer-preset-btn px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-700 font-bold text-xs">60s</button>
+                            <button type="button" data-preset-sec="90" class="timer-preset-btn px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-700 font-bold text-xs">90s</button>
+                            <button type="button" data-preset-sec="120" class="timer-preset-btn px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-700 font-bold text-xs">120s</button>
+                        </div>
+
+                        <div class="space-y-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                            <div class="flex items-center justify-between gap-2">
+                                <label for="cfg-timer-1" class="text-xs font-bold text-slate-700">☄️ 1. Pioggia Meteore</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="cfg-timer-1" data-game-timer="1" min="15" max="300" step="5" class="cfg-timer-input w-16 px-2 py-1 rounded-lg border border-slate-300 text-center font-mono font-bold text-xs bg-white">
+                                    <span class="text-xs font-bold text-slate-400">s</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <label for="cfg-timer-2" class="text-xs font-bold text-slate-700">🧭 2. Tastiera Cieca</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="cfg-timer-2" data-game-timer="2" min="15" max="300" step="5" class="cfg-timer-input w-16 px-2 py-1 rounded-lg border border-slate-300 text-center font-mono font-bold text-xs bg-white">
+                                    <span class="text-xs font-bold text-slate-400">s</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <label for="cfg-timer-3" class="text-xs font-bold text-slate-700">🤖 3. Corsa dei Robot</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="cfg-timer-3" data-game-timer="3" min="15" max="300" step="5" class="cfg-timer-input w-16 px-2 py-1 rounded-lg border border-slate-300 text-center font-mono font-bold text-xs bg-white">
+                                    <span class="text-xs font-bold text-slate-400">s</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <label for="cfg-timer-4" class="text-xs font-bold text-slate-700">🧩 4. Catena Ritmica</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="cfg-timer-4" data-game-timer="4" min="15" max="300" step="5" class="cfg-timer-input w-16 px-2 py-1 rounded-lg border border-slate-300 text-center font-mono font-bold text-xs bg-white">
+                                    <span class="text-xs font-bold text-slate-400">s</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100">
+                        <label for="cfg-custom-words" class="block font-extrabold text-base text-slate-900 mb-1">4. Parole Personalizzate</label>
+                        <p class="text-xs text-slate-500 mb-2">Parole extra per Corsa dei Robot (separate da virgola):</p>
+                        <textarea id="cfg-custom-words" rows="2" placeholder="es. scuola, libro, tastiera, computer, amici..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:border-indigo-500 outline-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- Colonna 2-3: Selettore Tasti Attivi -->
+                <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between space-y-4">
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h3 class="font-extrabold text-lg text-slate-900">Selezione Lettere e Tasti Utilizzati (Giochi)</h3>
+                                <p class="text-xs text-slate-500">Clicca sui tasti per attivarli o escluderli dagli esercizi della classe.</p>
+                            </div>
+                            <span id="cfg-active-keys-badge" class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 font-bold text-xs">26 tasti attivi</span>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2" id="cfg-key-presets">
+                            <button type="button" data-key-preset="home_row" class="key-preset-btn px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold">🎯 Solo Riga Base (ASDF JKLÒ)</button>
+                            <button type="button" data-key-preset="home_top" class="key-preset-btn px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold">⬆️ Riga Base + Superiore</button>
+                            <button type="button" data-key-preset="all_letters" class="key-preset-btn px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold">🔤 Tutte le Lettere (A-Z)</button>
+                            <button type="button" data-key-preset="all_italian" class="key-preset-btn px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 text-xs font-bold">🇮🇹 Lettere + Accentate</button>
+                            <button type="button" data-key-preset="left_hand" class="key-preset-btn px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold">✋ Solo Mano Sinistra</button>
+                            <button type="button" data-key-preset="right_hand" class="key-preset-btn px-3 py-1.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 text-xs font-bold">🤚 Solo Mano Destra</button>
+                        </div>
+
+                        <div id="cfg-teacher-keyboard" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2"></div>
+                    </div>
+
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+                        <span class="text-xs text-indigo-900 font-semibold">Le modifiche vengono applicate subito a tutti i giochi.</span>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="btn-cfg-reset" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs">↺ Default</button>
+                            <button type="button" id="btn-cfg-save" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm">💾 Salva Impostazioni</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB D: CAMBIA PIN DOCENTE -->
+            <div id="teacher-panel-pin" class="hidden max-w-md">
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <h3 class="font-extrabold text-lg text-slate-900">Modifica Codice PIN Docente</h3>
+                    <p class="text-xs text-slate-500">Scegli un nuovo PIN numerico (da 4 a 6 cifre) per proteggere questa sezione.</p>
+                    <input type="password" id="cfg-new-pin" maxlength="6" placeholder="Nuovo PIN (es. 2026)" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 focus:border-indigo-600 outline-none font-mono text-lg tracking-widest">
+                    <button type="button" id="btn-save-pin" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition">Aggiorna PIN</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== MODALE PIN DOCENTE ==================== -->
+    <div id="modal-pin" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-center">
+            <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-2xl">🔐</div>
+            <div>
+                <h3 class="font-black text-xl text-slate-900">Accesso Area Docente</h3>
+                <p class="text-xs text-slate-500 mt-1">Inserisci il PIN per entrare (PIN predefinito: <strong>1234</strong>)</p>
+            </div>
+            <div>
+                <input type="password" id="modal-pin-input" maxlength="6" placeholder="••••" class="w-full text-center font-mono text-2xl tracking-[0.5em] py-3 rounded-2xl border-2 border-slate-300 focus:border-indigo-600 outline-none">
+                <p id="modal-pin-error" class="text-xs text-rose-600 font-bold mt-2 hidden">PIN errato! Riprova.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="btn-pin-cancel" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">Annulla</button>
+                <button type="button" id="btn-pin-submit" class="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm">Entra</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODALE FINE PARTITA ==================== -->
+    <div id="modal-gameover" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 text-center space-y-5">
+            <div id="go-stars" class="text-4xl tracking-widest">⭐⭐⭐</div>
+            <div>
+                <span id="go-game-badge" class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-extrabold uppercase">Gioco Completato</span>
+                <h3 id="go-title" class="text-2xl font-black text-slate-900 mt-2">Ottimo Lavoro!</h3>
+                <p id="go-student-line" class="text-sm text-slate-500">Studente • Classe</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div>
+                    <div class="text-[11px] font-bold uppercase text-slate-400">Punteggio</div>
+                    <div id="go-score" class="font-mono font-black text-xl text-indigo-600">0</div>
+                </div>
+                <div>
+                    <div class="text-[11px] font-bold uppercase text-slate-400">Velocità</div>
+                    <div id="go-cpm" class="font-mono font-black text-xl text-emerald-600">0 CPM</div>
+                </div>
+                <div>
+                    <div class="text-[11px] font-bold uppercase text-slate-400">Precisione</div>
+                    <div id="go-acc" class="font-mono font-black text-xl text-amber-600">100%</div>
+                </div>
+            </div>
+
+            <div id="go-mistakes-box" class="hidden text-xs bg-rose-50 text-rose-800 p-3 rounded-xl border border-rose-200">
+                <strong>Tasti da ripassare:</strong> <span id="go-mistakes-text" class="font-mono font-bold"></span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <button type="button" id="btn-go-menu" class="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm">Menu Giochi</button>
+                <button type="button" id="btn-go-replay" class="py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md">Gioca Ancora ↻</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODALE CONFERMA PERSONALIZZATA ==================== -->
+    <div id="modal-confirm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-center">
+            <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-2xl">⚠️</div>
+            <h3 id="confirm-title" class="font-extrabold text-lg text-slate-900">Sei sicuro?</h3>
+            <p id="confirm-desc" class="text-xs text-slate-500">Questa azione non può essere annullata.</p>
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button type="button" id="btn-confirm-no" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">Annulla</button>
+                <button type="button" id="btn-confirm-yes" class="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm">Conferma</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICHE -->
+    <div id="toast-box" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ==================== SCRIPT APPLICATIVO COMPLETO ==================== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        'use strict';
+
+        /* --------------------------------------------------------------------
+           1. COSTANTI E LAYOUT TASTIERA QWERTY ITALIANA
+        -------------------------------------------------------------------- */
+        const KEYBOARD_ROWS = [
+            [
+                { key: 'q', finger: 'l-pinky',  zone: 'left' },
+                { key: 'w', finger: 'l-ring',   zone: 'left' },
+                { key: 'e', finger: 'l-middle', zone: 'left' },
+                { key: 'r', finger: 'l-index',  zone: 'left' },
+                { key: 't', finger: 'l-index',  zone: 'center' },
+                { key: 'y', finger: 'r-index',  zone: 'center' },
+                { key: 'u', finger: 'r-index',  zone: 'right' },
+                { key: 'i', finger: 'r-middle', zone: 'right' },
+                { key: 'o', finger: 'r-ring',   zone: 'right' },
+                { key: 'p', finger: 'r-pinky',  zone: 'right' },
+                { key: 'è', finger: 'r-pinky',  zone: 'right' }
+            ],
+            [
+                { key: 'a', finger: 'l-pinky',  zone: 'left' },
+                { key: 's', finger: 'l-ring',   zone: 'left' },
+                { key: 'd', finger: 'l-middle', zone: 'left' },
+                { key: 'f', finger: 'l-index',  zone: 'left', home: true },
+                { key: 'g', finger: 'l-index',  zone: 'center' },
+                { key: 'h', finger: 'r-index',  zone: 'center' },
+                { key: 'j', finger: 'r-index',  zone: 'right', home: true },
+                { key: 'k', finger: 'r-middle', zone: 'right' },
+                { key: 'l', finger: 'r-ring',   zone: 'right' },
+                { key: 'ò', finger: 'r-pinky',  zone: 'right' },
+                { key: 'à', finger: 'r-pinky',  zone: 'right' },
+                { key: 'ù', finger: 'r-pinky',  zone: 'right' }
+            ],
+            [
+                { key: 'z', finger: 'l-pinky',  zone: 'left' },
+                { key: 'x', finger: 'l-ring',   zone: 'left' },
+                { key: 'c', finger: 'l-middle', zone: 'left' },
+                { key: 'v', finger: 'l-index',  zone: 'left' },
+                { key: 'b', finger: 'l-index',  zone: 'center' },
+                { key: 'n', finger: 'r-index',  zone: 'center' },
+                { key: 'm', finger: 'r-index',  zone: 'right' },
+                { key: 'ì', finger: 'r-pinky',  zone: 'right' }
+            ]
+        ];
+
+        const GAMES_CATALOG = [
+            {
+                id: 1,
+                name: 'Pioggia di Meteore',
+                badge: 'Visuospaziale',
+                emoji: '☄️',
+                gradient: 'from-indigo-600 via-blue-600 to-cyan-500',
+                btnClass: 'bg-indigo-600 hover:bg-indigo-700',
+                desc: 'Le meteore cadono a sinistra, al centro o a destra rispecchiando la posizione reale del tasto. Distruggile prima che scada il tempo!'
+            },
+            {
+                id: 2,
+                name: 'Tastiera Cieca',
+                badge: 'Memoria Spaziale',
+                emoji: '🧭',
+                gradient: 'from-purple-600 via-fuchsia-600 to-pink-500',
+                btnClass: 'bg-purple-600 hover:bg-purple-700',
+                desc: 'Allena la memoria topografica: trova i tasti nascosti sulla tastiera senza guardare le mani!'
+            },
+            {
+                id: 3,
+                name: 'Corsa dei Robot',
+                badge: 'Velocità CPM/WPM',
+                emoji: '🤖',
+                gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
+                btnClass: 'bg-emerald-600 hover:bg-emerald-700',
+                desc: 'Digita parole e sequenze con precisione per dare turbo al tuo Robot e superare il Robot IA prima del traguardo!'
+            },
+            {
+                id: 4,
+                name: 'Catena Ritmica',
+                badge: 'Mano SX / DX',
+                emoji: '🧩',
+                gradient: 'from-amber-500 via-orange-500 to-red-500',
+                btnClass: 'bg-amber-500 hover:bg-amber-600',
+                desc: 'Alterna mano sinistra (Verde) e mano destra (Azzurro) seguendo il ritmo delle tessere colorate.'
+            }
+        ];
+
+        const BASE_WORDS = [
+            'casa', 'cane', 'gatto', 'sole', 'luna', 'mare', 'libro', 'penna', 'banco', 'aula',
+            'scuola', 'zaino', 'amico', 'gioco', 'palla', 'treno', 'aereo', 'stella', 'fiume', 'monte',
+            'bosco', 'fiore', 'verde', 'rosso', 'giallo', 'bianco', 'nero', 'tempo', 'anno', 'giorno',
+            'notte', 'mano', 'dito', 'testa', 'cuore', 'mente', 'idea', 'voce', 'suono', 'musica',
+            'arte', 'storia', 'mappa', 'mondo', 'terra', 'spazio', 'razzo', 'robot', 'codice', 'rete',
+            'tasto', 'schermo', 'mouse', 'video', 'foto', 'carta', 'foglio', 'gomma', 'riga', 'squadra',
+            'classe', 'studio', 'prova', 'voto', 'bravo', 'veloce', 'calma', 'forza', 'salto', 'corsa',
+            'nuoto', 'bici', 'strada', 'ponte', 'torre', 'porta', 'chiave', 'luce', 'ombra', 'vento'
+        ];
+
+        const FINGER_NAMES = {
+            'l-pinky':  'Mignolo Sinistro (Q, A, Z)',
+            'l-ring':   'Anulare Sinistro (W, S, X)',
+            'l-middle': 'Medio Sinistro (E, D, C)',
+            'l-index':  'Indice Sinistro - tasto guida F (R, T, F, G, V, B)',
+            'r-index':  'Indice Destro - tasto guida J (Y, U, H, J, N, M)',
+            'r-middle': 'Medio Destro (I, K)',
+            'r-ring':   'Anulare Destro (O, L)',
+            'r-pinky':  'Mignolo Destro (P, È, Ò, À, Ù, Ì)'
+        };
+
+        /* --------------------------------------------------------------------
+           2. STATO APPLICATIVO & PERSISTENZA DIFENSIVA
+        -------------------------------------------------------------------- */
+        const STORAGE_KEYS = {
+            PROFILE:  'dattilolab_v3_profile',
+            CONFIG:   'dattilolab_v3_config',
+            REPORTS:  'dattilolab_v3_reports',
+            PIN:      'dattilolab_v3_pin',
+            COPYTEXT: 'dattilolab_v3_copytext'
+        };
+
+        const DEFAULT_KEYS = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
+        const state = {
+            currentView: 'profile',
+            profile: {
+                name: '',
+                studentClass: '1^',
+                section: 'A'
+            },
+            config: {
+                caseMode: 'lower',
+                difficulty: 'easy',
+                activeKeys: [...DEFAULT_KEYS],
+                customWords: [],
+                timers: { 1: 60, 2: 60, 3: 60, 4: 60 }
+            },
+            copyExercise: {
+                title: 'Esercizio di Copia',
+                text: 'La tastiera del computer permette di scrivere testi in modo rapido e ordinato. Appoggia gli indici sui tasti F e J e mantieni la schiena dritta.',
+                showErrors: true,
+                highlightNext: true,
+                strictCase: true
+            },
+            reports: [],
+            pin: '1234',
+            activeGameId: null
+        };
+
+        function loadSavedData() {
+            try {
+                const p = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROFILE) || 'null');
+                if (p && typeof p === 'object') {
+                    state.profile.name = typeof p.name === 'string' ? p.name : '';
+                    if (['1^', '2^', '3^'].includes(p.studentClass)) state.profile.studentClass = p.studentClass;
+                    if (['A', 'B', 'C', 'D', 'E', 'F', 'G'].includes(p.section)) state.profile.section = p.section;
+                }
+            } catch (e) { /* fallback default */ }
+
+            try {
+                const c = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONFIG) || 'null');
+                if (c && typeof c === 'object') {
+                    if (['lower', 'upper', 'mixed'].includes(c.caseMode)) state.config.caseMode = c.caseMode;
+                    if (['easy', 'medium', 'hard'].includes(c.difficulty)) state.config.difficulty = c.difficulty;
+                    if (Array.isArray(c.activeKeys) && c.activeKeys.length >= 2) state.config.activeKeys = c.activeKeys;
+                    if (Array.isArray(c.customWords)) state.config.customWords = c.customWords;
+                    if (c.timers && typeof c.timers === 'object') {
+                        [1, 2, 3, 4].forEach(id => {
+                            const val = parseInt(c.timers[id], 10);
+                            if (!isNaN(val) && val >= 15 && val <= 300) state.config.timers[id] = val;
+                        });
+                    }
+                }
+            } catch (e) { /* fallback default */ }
+
+            try {
+                const ct = JSON.parse(localStorage.getItem(STORAGE_KEYS.COPYTEXT) || 'null');
+                if (ct && typeof ct === 'object') {
+                    if (typeof ct.title === 'string') state.copyExercise.title = ct.title;
+                    if (typeof ct.text === 'string' && ct.text.trim().length > 0) state.copyExercise.text = ct.text;
+                    if (typeof ct.showErrors === 'boolean') state.copyExercise.showErrors = ct.showErrors;
+                    if (typeof ct.highlightNext === 'boolean') state.copyExercise.highlightNext = ct.highlightNext;
+                    if (typeof ct.strictCase === 'boolean') state.copyExercise.strictCase = ct.strictCase;
+                }
+            } catch (e) { /* fallback default */ }
+
+            try {
+                const r = JSON.parse(localStorage.getItem(STORAGE_KEYS.REPORTS) || 'null');
+                if (Array.isArray(r)) state.reports = r;
+            } catch (e) { /* fallback default */ }
+
+            try {
+                const pin = localStorage.getItem(STORAGE_KEYS.PIN);
+                if (pin && /^\d{4,6}$/.test(pin)) state.pin = pin;
+            } catch (e) { /* fallback default */ }
+        }
+
+        function persistData() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(state.profile));
+                localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(state.config));
+                localStorage.setItem(STORAGE_KEYS.COPYTEXT, JSON.stringify(state.copyExercise));
+                localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(state.reports));
+                localStorage.setItem(STORAGE_KEYS.PIN, state.pin);
+            } catch (e) { /* ignore quota errors */ }
+        }
+
+        /* --------------------------------------------------------------------
+           3. AUDIO WEB API & TOAST NOTIFICHE
+        -------------------------------------------------------------------- */
+        const audio = {
+            muted: false,
+            ctx: null,
+            ensure() {
+                if (this.muted) return null;
+                try {
+                    if (!this.ctx) {
+                        const AC = window.AudioContext || window.webkitAudioContext;
+                        if (AC) this.ctx = new AC();
+                    }
+                    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+                    return this.ctx;
+                } catch (e) { return null; }
+            },
+            click() {
+                const ctx = this.ensure();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(520, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.04);
+                g.gain.setValueAtTime(0.12, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+                osc.connect(g);
+                g.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.045);
+            },
+            success() {
+                const ctx = this.ensure();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                [523.25, 659.25, 783.99].forEach((f, i) => {
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, now + i * 0.06);
+                    g.gain.setValueAtTime(0.14, now + i * 0.06);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.2);
+                    osc.connect(g);
+                    g.connect(ctx.destination);
+                    osc.start(now + i * 0.06);
+                    osc.stop(now + i * 0.06 + 0.22);
+                });
+            },
+            error() {
+                const ctx = this.ensure();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(110, ctx.currentTime + 0.14);
+                g.gain.setValueAtTime(0.14, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                osc.connect(g);
+                g.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.16);
+            }
+        };
+
+        function showToast(msg, type = 'info') {
+            const box = document.getElementById('toast-box');
+            if (!box) return;
+            const el = document.createElement('div');
+            const styles = {
+                info: 'bg-slate-900 text-white border-slate-700',
+                success: 'bg-emerald-600 text-white border-emerald-500',
+                error: 'bg-rose-600 text-white border-rose-500'
+            };
+            el.className = `px-4 py-3 rounded-2xl shadow-lg border text-xs sm:text-sm font-bold transition-all duration-300 ${styles[type] || styles.info}`;
+            el.textContent = msg;
+            box.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            }, 2600);
+        }
+
+        let confirmAction = null;
+        function askConfirm(title, desc, onYes) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-desc').textContent = desc;
+            confirmAction = onYes;
+            const modal = document.getElementById('modal-confirm');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeConfirm() {
+            const modal = document.getElementById('modal-confirm');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            confirmAction = null;
+        }
+
+        /* --------------------------------------------------------------------
+           4. GENERAZIONE CONTENUTI DIDATTICI (LETTERE E PAROLE FILTRATE)
+        -------------------------------------------------------------------- */
+        function getStudentDisplayName() {
+            const trimmed = state.profile.name.trim();
+            return trimmed.length > 0 ? trimmed : 'Studente Ospite';
+        }
+
+        function getActiveKeysList() {
+            return state.config.activeKeys.length >= 2 ? state.config.activeKeys : ['a', 's', 'd', 'f', 'j', 'k', 'l'];
+        }
+
+        function applyCaseModeToChar(ch) {
+            if (state.config.caseMode === 'upper') return ch.toUpperCase();
+            if (state.config.caseMode === 'mixed') return Math.random() > 0.5 ? ch.toUpperCase() : ch.toLowerCase();
+            return ch.toLowerCase();
+        }
+
+        function applyCaseModeToWord(word) {
+            if (state.config.caseMode === 'upper') return word.toUpperCase();
+            if (state.config.caseMode === 'mixed') {
+                return word.split('').map((c, idx) => (idx === 0 || Math.random() > 0.7) ? c.toUpperCase() : c.toLowerCase()).join('');
+            }
+            return word.toLowerCase();
+        }
+
+        function pickRandomKeyMeta() {
+            const keys = getActiveKeysList();
+            const baseChar = keys[Math.floor(Math.random() * keys.length)];
+            let meta = { key: baseChar, finger: 'l-index', zone: 'center' };
+            for (const row of KEYBOARD_ROWS) {
+                const found = row.find(item => item.key === baseChar);
+                if (found) { meta = found; break; }
+            }
+            return {
+                baseChar,
+                displayChar: applyCaseModeToChar(baseChar),
+                finger: meta.finger,
+                zone: meta.zone,
+                hand: meta.finger.startsWith('l-') ? 'left' : 'right'
+            };
+        }
+
+        function pickWordOrSequence(minLen = 3, maxLen = 6) {
+            const activeSet = new Set(getActiveKeysList());
+            const pool = [...state.config.customWords, ...BASE_WORDS];
+            const matching = pool.filter(w => {
+                const clean = w.trim().toLowerCase();
+                if (clean.length < minLen || clean.length > maxLen) return false;
+                return clean.split('').every(ch => activeSet.has(ch));
+            });
+
+            if (matching.length > 0) {
+                const chosen = matching[Math.floor(Math.random() * matching.length)].trim();
+                return applyCaseModeToWord(chosen);
+            }
+
+            const len = Math.floor(Math.random() * (maxLen - minLen + 1)) + minLen;
+            const keys = getActiveKeysList();
+            let seq = '';
+            for (let i = 0; i < len; i++) {
+                seq += keys[Math.floor(Math.random() * keys.length)];
+            }
+            return applyCaseModeToWord(seq);
+        }
+
+        /* --------------------------------------------------------------------
+           5. NAVIGAZIONE & RENDERING SCHERMATE PRINCIPALI
+        -------------------------------------------------------------------- */
+        function switchView(viewName) {
+            engine.stop();
+            state.currentView = viewName;
+
+            ['profile', 'tutorial', 'games', 'copytext', 'arena', 'teacher'].forEach(v => {
+                const section = document.getElementById(`view-${v}`);
+                if (section) section.classList.toggle('hidden', v !== viewName);
+            });
+
+            document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+                const target = btn.getAttribute('data-nav');
+                if (target === viewName) {
+                    btn.className = 'nav-tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm';
+                } else {
+                    btn.className = 'nav-tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700';
+                }
+            });
+
+            updateProfileBadges();
+
+            if (viewName === 'tutorial') tutorial.render();
+            if (viewName === 'games') renderGamesHub();
+            if (viewName === 'copytext') copyTextModule.initStudentView();
+            if (viewName === 'teacher') teacher.openTab('reports');
+        }
+
+        function updateProfileBadges() {
+            const displayName = getStudentDisplayName();
+            const classLabel = `${state.profile.studentClass} ${state.profile.section}`;
+
+            document.getElementById('badge-student-name').textContent = displayName;
+            document.getElementById('badge-student-class').textContent = classLabel;
+            document.getElementById('hub-player-tag').textContent = `${displayName} • ${classLabel}`;
+            const ctTag = document.getElementById('ct-player-tag');
+            if (ctTag) ctTag.textContent = `${displayName} • ${classLabel}`;
+
+            const caseMap = { lower: 'Solo Minuscolo', upper: 'Solo Maiuscolo', mixed: 'Maiuscolo + Minuscolo' };
+            const diffMap = { easy: 'Velocità: Principiante', medium: 'Velocità: Intermedio', hard: 'Velocità: Veloce' };
+            document.getElementById('summary-case').textContent = caseMap[state.config.caseMode];
+            document.getElementById('summary-keys').textContent = `${state.config.activeKeys.length} tasti attivi`;
+            document.getElementById('summary-speed').textContent = diffMap[state.config.difficulty];
+        }
+
+        function renderGameCardsInto(containerId, compact = false) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.innerHTML = GAMES_CATALOG.map(g => {
+                const durationSec = state.config.timers[g.id] || 60;
+                return `
+                    <div class="bg-white rounded-3xl border-2 border-slate-200 hover:border-indigo-500 shadow-sm hover:shadow-lg transition-all flex flex-col overflow-hidden">
+                        <div class="${compact ? 'h-24 p-4' : 'h-32 p-5'} bg-gradient-to-br ${g.gradient} flex items-start justify-between text-white">
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="px-2 py-0.5 rounded-full bg-white/20 text-[11px] font-bold">${g.badge}</span>
+                                    <span class="px-2 py-0.5 rounded-full bg-black/25 font-mono text-[11px] font-bold">⏱️ ${durationSec}s</span>
+                                </div>
+                                <h3 class="font-black ${compact ? 'text-lg mt-1.5' : 'text-xl mt-2'} leading-tight">${g.name}</h3>
+                            </div>
+                            <span class="${compact ? 'text-3xl' : 'text-5xl'}">${g.emoji}</span>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">${g.desc}</p>
+                            <button type="button" data-launch-game="${g.id}" class="launch-game-btn w-full py-2.5 rounded-xl ${g.btnClass} text-white font-extrabold text-sm shadow-sm transition">
+                                Gioca Ora →
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderGamesHub() {
+            renderGameCardsInto('hub-games-grid', false);
+
+            const panel = document.getElementById('recent-scores-panel');
+            const list = document.getElementById('recent-scores-list');
+            const recent = state.reports.slice(0, 4);
+            if (recent.length === 0) {
+                panel.classList.add('hidden');
+                return;
+            }
+            panel.classList.remove('hidden');
+            list.innerHTML = recent.map(r => `
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3.5">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-indigo-700">${r.game}</span>
+                        <span class="font-bold bg-white px-2 py-0.5 rounded border border-slate-200">${r.studentClass} ${r.section}</span>
+                    </div>
+                    <div class="font-extrabold text-sm text-slate-900 mt-1 truncate">${r.studentName}</div>
+                    <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 text-xs font-mono">
+                        <span class="font-bold text-indigo-600">${r.score} pt</span>
+                        <span class="text-emerald-600 font-bold">${r.cpm} CPM</span>
+                        <span class="text-slate-600">${r.accuracy}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /* --------------------------------------------------------------------
+           6. MODULO COPIA TESTO: RUOLI SEPARATI DOCENTE / STUDENTE
+        -------------------------------------------------------------------- */
+        const copyTextModule = {
+            targetText: '',
+            title: 'Esercizio di Copia',
+            startTime: null,
+            timerId: null,
+            finished: false,
+            totalKeystrokes: 0,
+            errorKeystrokes: 0,
+            mistakes: {},
+            prevTypedLen: 0,
+            lastSubmission: null,
+
+            escapeHtml(str) {
+                return str
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            },
+
+            normalizeText(raw) {
+                return (raw || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            },
+
+            charsMatch(expected, actual) {
+                if (state.copyExercise.strictCase) {
+                    return expected === actual;
+                }
+                return expected.toLowerCase() === actual.toLowerCase();
+            },
+
+            /* --- Metodi Area Docente --- */
+            syncTeacherPanel() {
+                const titleInput = document.getElementById('ct-title-input');
+                const sourceArea = document.getElementById('ct-source-textarea');
+                const optErr = document.getElementById('ct-opt-show-errors');
+                const optNext = document.getElementById('ct-opt-highlight-next');
+                const optCase = document.getElementById('ct-opt-strict-case');
+
+                if (titleInput) titleInput.value = state.copyExercise.title;
+                if (sourceArea) sourceArea.value = state.copyExercise.text;
+                if (optErr) optErr.checked = state.copyExercise.showErrors;
+                if (optNext) optNext.checked = state.copyExercise.highlightNext;
+                if (optCase) optCase.checked = state.copyExercise.strictCase;
+
+                this.updateCharCounter();
+                this.refreshTeacherSubmissionBox();
+            },
+
+            updateCharCounter() {
+                const sourceArea = document.getElementById('ct-source-textarea');
+                const countEl = document.getElementById('ct-char-count');
+                if (sourceArea && countEl) {
+                    countEl.textContent = `${sourceArea.value.length} caratteri`;
+                }
+            },
+
+            saveFromTeacher(notify = true) {
+                const sourceArea = document.getElementById('ct-source-textarea');
+                const titleInput = document.getElementById('ct-title-input');
+                const cleaned = this.normalizeText(sourceArea.value).trim();
+
+                if (!cleaned) {
+                    showToast('Inserisci o carica un testo prima di salvare!', 'error');
+                    return false;
+                }
+
+                const title = (titleInput.value || '').trim() || 'Esercizio di Copia';
+                state.copyExercise.text = cleaned;
+                state.copyExercise.title = title;
+                state.copyExercise.showErrors = document.getElementById('ct-opt-show-errors').checked;
+                state.copyExercise.highlightNext = document.getElementById('ct-opt-highlight-next').checked;
+                state.copyExercise.strictCase = document.getElementById('ct-opt-strict-case').checked;
+                persistData();
+
+                this.targetText = cleaned;
+                this.title = title;
+                this.resetAttempt(false);
+
+                if (notify) {
+                    showToast('Testo e impostazioni assegnati allo studente!', 'success');
+                }
+                return true;
+            },
+
+            refreshTeacherSubmissionBox() {
+                const metaEl = document.getElementById('ct-teacher-submission-meta');
+                const prevEl = document.getElementById('ct-teacher-submission-preview');
+                const studentInp = document.getElementById('ct-student-input');
+                if (!metaEl || !prevEl) return;
+
+                const currentText = studentInp ? studentInp.value : '';
+                if (this.lastSubmission) {
+                    const s = this.lastSubmission;
+                    metaEl.textContent = `Studente: ${s.studentName} (${s.studentClass} ${s.section}) • Stato: ${s.completed ? 'Completato ✅' : 'In corso'} • Velocità: ${s.cpm} CPM • Precisione: ${s.accuracy}%`;
+                    prevEl.textContent = s.typedText || '(nessun carattere digitato)';
+                } else if (currentText.trim().length > 0) {
+                    metaEl.textContent = `Studente: ${getStudentDisplayName()} (${state.profile.studentClass} ${state.profile.section}) • Stato: In corso`;
+                    prevEl.textContent = currentText;
+                } else {
+                    metaEl.textContent = 'Nessun elaborato ancora digitato nella sessione corrente.';
+                    prevEl.textContent = 'In attesa che lo studente inizi a scrivere nella sezione "4. Copia Testo"...';
+                }
+            },
+
+            downloadStudentSubmission(format = 'txt') {
+                const studentInp = document.getElementById('ct-student-input');
+                const liveText = studentInp ? studentInp.value : '';
+                const sub = this.lastSubmission || {
+                    timestamp: new Date().toLocaleString('it-IT'),
+                    studentName: getStudentDisplayName(),
+                    studentClass: state.profile.studentClass,
+                    section: state.profile.section,
+                    exerciseTitle: state.copyExercise.title,
+                    sourceText: state.copyExercise.text,
+                    typedText: liveText,
+                    completed: false,
+                    elapsedSec: this.startTime ? Math.max(1, Math.round((Date.now() - this.startTime) / 1000)) : 0,
+                    cpm: 0,
+                    wpm: 0,
+                    accuracy: 100,
+                    mistakes: 'Nessuno'
+                };
+
+                if (!sub.typedText || !sub.typedText.trim()) {
+                    showToast('Lo studente non ha ancora scritto alcun testo da scaricare.', 'error');
+                    return;
+                }
+
+                const safeStudent = sub.studentName.toLowerCase().replace(/[^a-z0-9àèéìòù]+/gi, '_') || 'studente';
+                if (format === 'json') {
+                    const blob = new Blob([JSON.stringify(sub, null, 2)], { type: 'application/json;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Elaborato_${safeStudent}_${new Date().toISOString().slice(0, 10)}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast('Report JSON dell\'elaborato scaricato!', 'success');
+                } else {
+                    const txtContent = [
+                        `DATTILOLAB - ELABORATO DI COPIA TESTO`,
+                        `======================================`,
+                        `Studente: ${sub.studentName} (${sub.studentClass} ${sub.section})`,
+                        `Data/Ora: ${sub.timestamp}`,
+                        `Titolo Esercizio: ${sub.exerciseTitle}`,
+                        `Stato: ${sub.completed ? 'Completato' : 'Parziale'}`,
+                        `Velocità: ${sub.cpm} CPM (${sub.wpm} WPM) | Precisione: ${sub.accuracy}% | Tempo: ${sub.elapsedSec}s`,
+                        ``,
+                        `--- TESTO SCRITTO DALLO STUDENTE ---`,
+                        sub.typedText
+                    ].join('\n');
+
+                    const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Elaborato_${safeStudent}_${new Date().toISOString().slice(0, 10)}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast('File .TXT con l\'elaborato scaricato!', 'success');
+                }
+            },
+
+            exportExerciseToJSON() {
+                const rawText = this.normalizeText(document.getElementById('ct-source-textarea').value).trim();
+                const rawTitle = document.getElementById('ct-title-input').value.trim() || 'Esercizio di Copia';
+
+                if (!rawText) {
+                    showToast('Scrivi o incolla un testo prima di scaricare il file JSON.', 'error');
+                    return;
+                }
+
+                const payload = {
+                    app: 'DattiloLab',
+                    version: '2.0',
+                    type: 'esercizio_copia_testo',
+                    exportedAt: new Date().toISOString(),
+                    title: rawTitle,
+                    text: rawText,
+                    settings: {
+                        showErrors: document.getElementById('ct-opt-show-errors').checked,
+                        highlightNext: document.getElementById('ct-opt-highlight-next').checked,
+                        strictCase: document.getElementById('ct-opt-strict-case').checked
+                    }
+                };
+
+                const jsonStr = JSON.stringify(payload, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const safeSlug = rawTitle.toLowerCase().replace(/[^a-z0-9àèéìòù]+/gi, '_').replace(/^_|_$/g, '') || 'testo_esercizio';
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `DattiloLab_${safeSlug}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showToast('File JSON dell\'esercizio scaricato!', 'success');
+            },
+
+            importExerciseFromFile(file) {
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const rawContent = String(ev.target.result || '');
+                        let importedText = '';
+                        let importedTitle = file.name.replace(/\.(json|txt)$/i, '') || 'Esercizio Importato';
+
+                        if (file.name.toLowerCase().endsWith('.txt')) {
+                            importedText = rawContent;
+                        } else {
+                            const parsed = JSON.parse(rawContent);
+                            if (typeof parsed === 'string') {
+                                importedText = parsed;
+                            } else if (parsed && typeof parsed === 'object') {
+                                importedText = parsed.text || parsed.testo || parsed.content || '';
+                                importedTitle = parsed.title || parsed.titolo || importedTitle;
+                                if (parsed.settings && typeof parsed.settings === 'object') {
+                                    if (typeof parsed.settings.showErrors === 'boolean') {
+                                        document.getElementById('ct-opt-show-errors').checked = parsed.settings.showErrors;
+                                    }
+                                    if (typeof parsed.settings.highlightNext === 'boolean') {
+                                        document.getElementById('ct-opt-highlight-next').checked = parsed.settings.highlightNext;
+                                    }
+                                    if (typeof parsed.settings.strictCase === 'boolean') {
+                                        document.getElementById('ct-opt-strict-case').checked = parsed.settings.strictCase;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!importedText || !importedText.trim()) {
+                            showToast('Il file selezionato non contiene testo valido.', 'error');
+                            return;
+                        }
+
+                        document.getElementById('ct-title-input').value = importedTitle;
+                        document.getElementById('ct-source-textarea').value = importedText;
+                        this.updateCharCounter();
+                        this.saveFromTeacher(false);
+                        showToast(`File "${file.name}" caricato e assegnato allo studente!`, 'success');
+                    } catch (err) {
+                        showToast('Errore nella lettura del file: verifica che sia un .JSON o .TXT valido.', 'error');
+                    }
+                };
+                reader.onerror = () => {
+                    showToast('Impossibile leggere il file selezionato.', 'error');
+                };
+                reader.readAsText(file, 'UTF-8');
+            },
+
+            /* --- Metodi Area Studente (Solo Copiatura) --- */
+            initStudentView() {
+                this.targetText = this.normalizeText(state.copyExercise.text).trim();
+                this.title = state.copyExercise.title || 'Esercizio di Copia';
+
+                document.getElementById('ct-active-title').textContent = this.title;
+
+                const badges = [];
+                if (state.copyExercise.strictCase) badges.push('Maiuscole/Minuscole attive');
+                else badges.push('Maiuscole libere');
+                if (state.copyExercise.showErrors) badges.push('Segnalazione errori');
+                document.getElementById('ct-mode-badge').textContent = badges.join(' • ');
+
+                const guideCaption = document.getElementById('ct-guide-caption');
+                guideCaption.textContent = state.copyExercise.highlightNext
+                    ? 'Segui il testo modello: il carattere evidenziato in giallo è il prossimo da digitare.'
+                    : 'Ricopia fedelmente il testo modello riportato nel riquadro qui sotto.';
+
+                const inp = document.getElementById('ct-student-input');
+                if (!inp.value) {
+                    this.resetAttempt(false);
+                } else {
+                    this.renderReference(inp.value);
+                    this.updateLiveHUD();
+                }
+            },
+
+            resetAttempt(focusInput = true) {
+                if (this.timerId) {
+                    clearInterval(this.timerId);
+                    this.timerId = null;
+                }
+                this.startTime = null;
+                this.finished = false;
+                this.totalKeystrokes = 0;
+                this.errorKeystrokes = 0;
+                this.mistakes = {};
+                this.prevTypedLen = 0;
+
+                const inp = document.getElementById('ct-student-input');
+                if (inp) {
+                    inp.value = '';
+                    inp.disabled = false;
+                }
+
+                document.getElementById('ct-completed-banner').classList.add('hidden');
+                document.getElementById('ct-hud-progress').textContent = '0%';
+                document.getElementById('ct-hud-cpm').innerHTML = '0 <span class="text-[10px]">CPM</span>';
+                document.getElementById('ct-hud-acc').textContent = '100%';
+                document.getElementById('ct-hud-time').textContent = '0s';
+                document.getElementById('ct-progress-bar').style.width = '0%';
+
+                this.renderReference('');
+                if (focusInput && inp) inp.focus();
+            },
+
+            startClockIfNeeded() {
+                if (this.startTime !== null) return;
+                this.startTime = Date.now();
+                this.timerId = setInterval(() => {
+                    if (this.finished || !this.startTime) return;
+                    this.updateLiveHUD();
+                }, 500);
+            },
+
+            updateLiveHUD() {
+                const inp = document.getElementById('ct-student-input');
+                const typed = this.normalizeText(inp.value);
+                const target = this.targetText;
+
+                let correctPrefix = 0;
+                while (correctPrefix < typed.length && correctPrefix < target.length && this.charsMatch(target[correctPrefix], typed[correctPrefix])) {
+                    correctPrefix++;
+                }
+
+                const pct = target.length > 0 ? Math.min(100, Math.round((correctPrefix / target.length) * 100)) : 0;
+                const elapsedSec = this.startTime ? Math.max(1, Math.round((Date.now() - this.startTime) / 1000)) : 0;
+                const elapsedMin = Math.max(0.05, elapsedSec / 60);
+                const cpm = this.startTime ? Math.round(correctPrefix / elapsedMin) : 0;
+                const acc = this.totalKeystrokes > 0
+                    ? Math.max(0, Math.round(((this.totalKeystrokes - this.errorKeystrokes) / this.totalKeystrokes) * 100))
+                    : 100;
+
+                document.getElementById('ct-hud-progress').textContent = `${pct}%`;
+                document.getElementById('ct-progress-bar').style.width = `${pct}%`;
+                document.getElementById('ct-hud-cpm').innerHTML = `${cpm} <span class="text-[10px]">CPM</span>`;
+                document.getElementById('ct-hud-acc').textContent = `${acc}%`;
+                document.getElementById('ct-hud-time').textContent = `${elapsedSec}s`;
+
+                return { correctPrefix, pct, elapsedSec, cpm, acc };
+            },
+
+            renderReference(typedRaw) {
+                const display = document.getElementById('ct-reference-display');
+                if (!display) return;
+                const target = this.targetText;
+                const typed = this.normalizeText(typedRaw);
+                const showErrors = state.copyExercise.showErrors;
+                const highlightNext = state.copyExercise.highlightNext;
+
+                let html = '';
+                for (let i = 0; i < target.length; i++) {
+                    const ch = target[i];
+                    const shownChar = ch === '\n' ? '↵\n' : this.escapeHtml(ch);
+
+                    if (i < typed.length) {
+                        if (this.charsMatch(ch, typed[i])) {
+                            html += `<span class="text-emerald-400 bg-emerald-500/15 rounded-sm">${shownChar}</span>`;
+                        } else if (showErrors) {
+                            const errVisible = ch === ' ' ? '␣' : shownChar;
+                            html += `<span class="text-white bg-rose-600 rounded-sm px-0.5">${errVisible}</span>`;
+                        } else {
+                            html += `<span class="text-slate-300">${shownChar}</span>`;
+                        }
+                    } else if (i === typed.length && highlightNext) {
+                        const nextVisible = ch === ' ' ? '␣' : shownChar;
+                        html += `<span class="bg-amber-400 text-slate-950 font-black rounded px-0.5 shadow-sm">${nextVisible}</span>`;
+                    } else {
+                        html += `<span class="text-slate-400">${shownChar}</span>`;
+                    }
+                }
+                display.innerHTML = html;
+            },
+
+            isFullTextMatched(typed, target) {
+                if (typed.length !== target.length) return false;
+                for (let i = 0; i < target.length; i++) {
+                    if (!this.charsMatch(target[i], typed[i])) return false;
+                }
+                return true;
+            },
+
+            handleStudentInput() {
+                if (this.finished || !this.targetText) return;
+                const inp = document.getElementById('ct-student-input');
+                const typed = this.normalizeText(inp.value);
+
+                if (typed.length > 0) {
+                    this.startClockIfNeeded();
+                }
+
+                if (typed.length > this.prevTypedLen) {
+                    const idx = typed.length - 1;
+                    this.totalKeystrokes++;
+                    if (idx < this.targetText.length && this.charsMatch(this.targetText[idx], typed[idx])) {
+                        audio.click();
+                    } else {
+                        this.errorKeystrokes++;
+                        audio.error();
+                        const expected = this.targetText[idx];
+                        if (expected && expected !== ' ' && expected !== '\n') {
+                            const k = expected.toLowerCase();
+                            this.mistakes[k] = (this.mistakes[k] || 0) + 1;
+                        }
+                    }
+                }
+                this.prevTypedLen = typed.length;
+
+                this.renderReference(typed);
+                const stats = this.updateLiveHUD();
+
+                this.lastSubmission = {
+                    timestamp: new Date().toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }),
+                    studentName: getStudentDisplayName(),
+                    studentClass: state.profile.studentClass,
+                    section: state.profile.section,
+                    exerciseTitle: this.title,
+                    sourceText: this.targetText,
+                    typedText: typed,
+                    completed: false,
+                    elapsedSec: stats.elapsedSec,
+                    cpm: stats.cpm,
+                    wpm: Math.round(stats.cpm / 5),
+                    accuracy: stats.acc,
+                    mistakes: 'In corso'
+                };
+
+                if (this.isFullTextMatched(typed, this.targetText)) {
+                    this.completeExercise(stats, typed);
+                }
+            },
+
+            completeExercise(stats, typedText) {
+                this.finished = true;
+                if (this.timerId) {
+                    clearInterval(this.timerId);
+                    this.timerId = null;
+                }
+                audio.success();
+
+                const inp = document.getElementById('ct-student-input');
+                inp.disabled = true;
+
+                const wpm = Math.round(stats.cpm / 5);
+                const score = Math.max(10, Math.round((this.targetText.length * (stats.acc / 100)) + stats.cpm));
+
+                const sortedMistakes = Object.entries(this.mistakes)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 4)
+                    .map(([k, count]) => `${k.toUpperCase()} (${count})`)
+                    .join(', ') || 'Nessuno';
+
+                const timestampStr = new Date().toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
+
+                this.lastSubmission = {
+                    timestamp: timestampStr,
+                    studentName: getStudentDisplayName(),
+                    studentClass: state.profile.studentClass,
+                    section: state.profile.section,
+                    exerciseTitle: this.title,
+                    sourceText: this.targetText,
+                    typedText,
+                    completed: true,
+                    elapsedSec: stats.elapsedSec,
+                    cpm: stats.cpm,
+                    wpm,
+                    accuracy: stats.acc,
+                    mistakes: sortedMistakes
+                };
+
+                const record = {
+                    timestamp: timestampStr,
+                    studentName: getStudentDisplayName(),
+                    studentClass: state.profile.studentClass,
+                    section: state.profile.section,
+                    game: 'Copia Testo',
+                    score,
+                    cpm: stats.cpm,
+                    wpm,
+                    accuracy: stats.acc,
+                    mistakes: sortedMistakes
+                };
+
+                state.reports.unshift(record);
+                persistData();
+
+                const banner = document.getElementById('ct-completed-banner');
+                const summary = document.getElementById('ct-completed-summary');
+                summary.textContent = `Tempo: ${stats.elapsedSec}s • Velocità: ${stats.cpm} CPM (${wpm} WPM) • Precisione: ${stats.acc}% • Risultato salvato nel registro docente.`;
+                banner.classList.remove('hidden');
+                showToast('Esercizio completato e registrato!', 'success');
+            }
+        };
+
+        /* --------------------------------------------------------------------
+           7. MODULO TUTORIAL INTERATTIVO ("GUIDA & POSTURA")
+        -------------------------------------------------------------------- */
+        const tutorial = {
+            selectedFinger: null,
+            warmupSeq: ['f', 'j', 'd', 'k', 's', 'l', 'a', 'ò'],
+            warmupIdx: 0,
+
+            render() {
+                this.renderKeyboardMap();
+                this.renderWarmup();
+            },
+
+            renderKeyboardMap() {
+                const container = document.getElementById('tut-keyboard-container');
+                if (!container) return;
+                container.innerHTML = '';
+
+                KEYBOARD_ROWS.forEach((row, rIdx) => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = `flex justify-center gap-1.5 ${rIdx === 1 ? 'pl-4' : rIdx === 2 ? 'pl-8' : ''}`;
+
+                    row.forEach(item => {
+                        const dimmed = this.selectedFinger && this.selectedFinger !== item.finger;
+                        const highlighted = this.selectedFinger === item.finger;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.dataset.finger = item.finger;
+                        btn.className = `key-cap w-9 h-10 sm:w-12 sm:h-12 rounded-xl border-2 font-mono font-extrabold text-sm sm:text-base flex flex-col items-center justify-center finger-${item.finger} ${
+                            dimmed ? 'opacity-30 scale-95' : ''
+                        } ${highlighted ? 'ring-4 ring-indigo-500 scale-110 z-10' : ''}`;
+                        btn.innerHTML = `<span>${item.key.toUpperCase()}</span>${item.home ? '<span class="w-3.5 h-0.5 bg-current rounded-full mt-0.5"></span>' : ''}`;
+                        btn.addEventListener('click', () => this.selectFinger(item.finger));
+                        rowDiv.appendChild(btn);
+                    });
+
+                    container.appendChild(rowDiv);
+                });
+
+                const spaceDiv = document.createElement('div');
+                spaceDiv.className = 'flex justify-center pt-1';
+                spaceDiv.innerHTML = '<div class="w-56 sm:w-80 h-9 rounded-xl border-2 border-slate-300 bg-slate-200 text-slate-600 font-mono text-xs font-bold flex items-center justify-center">BARRA SPAZIATRICE (Pollici SX / DX)</div>';
+                container.appendChild(spaceDiv);
+            },
+
+            selectFinger(fingerCode) {
+                this.selectedFinger = fingerCode;
+                document.querySelectorAll('.tut-finger-card').forEach(card => {
+                    card.classList.toggle('ring-4', card.dataset.finger === fingerCode);
+                    card.classList.toggle('ring-indigo-500', card.dataset.finger === fingerCode);
+                });
+                const cap = document.getElementById('tut-finger-caption');
+                if (cap && FINGER_NAMES[fingerCode]) {
+                    cap.textContent = FINGER_NAMES[fingerCode];
+                }
+                this.renderKeyboardMap();
+            },
+
+            clearFilter() {
+                this.selectedFinger = null;
+                document.querySelectorAll('.tut-finger-card').forEach(card => card.classList.remove('ring-4', 'ring-indigo-500'));
+                const cap = document.getElementById('tut-finger-caption');
+                if (cap) cap.innerHTML = 'Appoggia gli indici sui tasti guida <strong>F</strong> e <strong>J</strong> (riconoscibili dal trattino in rilievo).';
+                this.renderKeyboardMap();
+            },
+
+            newWarmup() {
+                const sets = [
+                    ['f', 'j', 'd', 'k', 's', 'l', 'a', 'ò'],
+                    ['a', 's', 'd', 'f', 'j', 'k', 'l', 'ò'],
+                    ['f', 'd', 's', 'a', 'j', 'k', 'l', 'ò'],
+                    ['f', 'j', 'f', 'j', 'd', 'k', 's', 'l']
+                ];
+                this.warmupSeq = sets[Math.floor(Math.random() * sets.length)];
+                this.warmupIdx = 0;
+                this.renderWarmup();
+            },
+
+            renderWarmup() {
+                const box = document.getElementById('tut-warmup-tiles');
+                const hint = document.getElementById('tut-warmup-hint');
+                if (!box) return;
+
+                box.innerHTML = this.warmupSeq.map((ch, idx) => {
+                    if (idx < this.warmupIdx) {
+                        return '<div class="w-11 h-13 sm:w-13 sm:h-15 rounded-2xl bg-emerald-600/30 border-2 border-emerald-400 text-emerald-300 font-mono font-extrabold text-xl flex items-center justify-center">✓</div>';
+                    }
+                    const current = idx === this.warmupIdx;
+                    return `<button type="button" data-warmup-char="${ch}" class="w-11 h-13 sm:w-13 sm:h-15 rounded-2xl border-2 font-mono font-extrabold text-xl flex items-center justify-center transition ${
+                        current ? 'bg-amber-400 text-slate-950 border-white scale-110 ring-4 ring-amber-400/50' : 'bg-slate-800 border-slate-700 text-slate-400'
+                    }">${ch.toUpperCase()}</button>`;
+                }).join('');
+
+                const target = this.warmupSeq[this.warmupIdx];
+                if (target && hint) {
+                    let fingerLabel = '';
+                    for (const row of KEYBOARD_ROWS) {
+                        const found = row.find(k => k.key === target);
+                        if (found) { fingerLabel = FINGER_NAMES[found.finger]; break; }
+                    }
+                    hint.innerHTML = `Premi <span class="font-mono bg-white text-slate-900 px-2 py-0.5 rounded font-black mx-1">${target.toUpperCase()}</span> con: <strong>${fingerLabel}</strong>`;
+                }
+            },
+
+            handleInput(rawChar) {
+                const target = this.warmupSeq[this.warmupIdx];
+                if (!target) return;
+                if (rawChar.toLowerCase() === target.toLowerCase()) {
+                    audio.click();
+                    this.warmupIdx++;
+                    if (this.warmupIdx >= this.warmupSeq.length) {
+                        audio.success();
+                        showToast('Ottimo riscaldamento! Ora sei pronto per i 4 giochi!', 'success');
+                        this.newWarmup();
+                    } else {
+                        this.renderWarmup();
+                    }
+                } else {
+                    audio.error();
+                }
+            }
+        };
+
+        /* --------------------------------------------------------------------
+           8. TASTIERA VIRTUALE NELL'ARENA DI GIOCO
+        -------------------------------------------------------------------- */
+        const arenaKeyboard = {
+            render(blindMode = false) {
+                const container = document.getElementById('arena-keyboard');
+                if (!container) return;
+                container.innerHTML = '';
+                const activeSet = new Set(getActiveKeysList());
+
+                KEYBOARD_ROWS.forEach((row, rIdx) => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = `flex justify-center gap-1 sm:gap-1.5 ${rIdx === 1 ? 'pl-2 sm:pl-4' : rIdx === 2 ? 'pl-6 sm:pl-10' : ''}`;
+
+                    row.forEach(item => {
+                        const enabled = activeSet.has(item.key);
+                        const label = state.config.caseMode === 'upper' ? item.key.toUpperCase() : item.key;
+                        const keyBtn = document.createElement('button');
+                        keyBtn.type = 'button';
+                        keyBtn.id = `akey-${item.key}`;
+                        keyBtn.dataset.virtualKey = label;
+                        keyBtn.className = `key-cap w-8 h-10 sm:w-12 sm:h-12 md:w-14 md:h-13 rounded-xl border-2 flex flex-col items-center justify-center font-mono font-extrabold text-sm sm:text-lg ${
+                            enabled ? `finger-${item.finger}` : 'key-disabled'
+                        } ${blindMode ? 'key-blind-hidden' : ''}`;
+                        keyBtn.innerHTML = `<span class="key-label">${label}</span>${item.home ? '<span class="w-3 h-0.5 bg-current rounded-full opacity-60 mt-0.5"></span>' : ''}`;
+                        keyBtn.addEventListener('pointerdown', (e) => {
+                            e.preventDefault();
+                            engine.handleKey(label);
+                        });
+                        rowDiv.appendChild(keyBtn);
+                    });
+
+                    container.appendChild(rowDiv);
+                });
+
+                const spaceRow = document.createElement('div');
+                spaceRow.className = 'flex justify-center pt-0.5';
+                spaceRow.innerHTML = '<div class="w-48 sm:w-72 h-8 sm:h-10 rounded-xl border-2 border-slate-300 bg-slate-100 text-slate-400 font-mono text-xs font-bold flex items-center justify-center">SPAZIO</div>';
+                container.appendChild(spaceRow);
+            },
+
+            highlightTarget(char) {
+                document.querySelectorAll('#arena-keyboard .key-target').forEach(el => el.classList.remove('key-target'));
+                if (!char) return;
+                const el = document.getElementById(`akey-${char.toLowerCase()}`);
+                if (el) el.classList.add('key-target');
+            },
+
+            flash(char, ok) {
+                const el = document.getElementById(`akey-${char.toLowerCase()}`);
+                if (!el) return;
+                const cls = ok ? 'key-feedback-ok' : 'key-feedback-err';
+                el.classList.add(cls);
+                setTimeout(() => el.classList.remove(cls), 180);
+            }
+        };
+
+        /* --------------------------------------------------------------------
+           9. MOTORE DI GIOCO UNIFICATO (TUTTI E 4 I GIOCHI CON TIMER)
+        -------------------------------------------------------------------- */
+        const engine = {
+            active: false,
+            gameId: null,
+            timerId: null,
+            rafId: null,
+            startTime: 0,
+            initialSeconds: 60,
+            timeLeft: 60,
+            score: 0,
+            hits: 0,
+            attempts: 0,
+            mistakes: {},
+            data: {},
+
+            speedMultiplier() {
+                if (state.config.difficulty === 'medium') return 1.35;
+                if (state.config.difficulty === 'hard') return 1.75;
+                return 1.0;
+            },
+
+            launch(gameId) {
+                this.stop();
+                state.activeGameId = gameId;
+                this.active = true;
+                this.gameId = gameId;
+                this.startTime = Date.now();
+                this.score = 0;
+                this.hits = 0;
+                this.attempts = 0;
+                this.mistakes = {};
+
+                const sec = parseInt(state.config.timers[gameId], 10) || 60;
+                this.initialSeconds = sec;
+                this.timeLeft = sec;
+                this.data = {};
+
+                const meta = GAMES_CATALOG.find(g => g.id === gameId);
+                document.getElementById('arena-game-title').textContent = `${meta.emoji} ${meta.name}`;
+                document.getElementById('arena-game-desc').textContent = meta.desc;
+
+                const shieldsBox = document.getElementById('hud-shields-box');
+                shieldsBox.classList.toggle('hidden', gameId !== 1);
+
+                arenaKeyboard.render(gameId === 2);
+                this.updateHUD();
+                this.updateTimerBar();
+
+                if (gameId === 1) this.startGame1();
+                if (gameId === 2) this.startGame2();
+                if (gameId === 3) this.startGame3();
+                if (gameId === 4) this.startGame4();
+            },
+
+            stop() {
+                this.active = false;
+                if (this.timerId) {
+                    clearInterval(this.timerId);
+                    this.timerId = null;
+                }
+                if (this.rafId) {
+                    cancelAnimationFrame(this.rafId);
+                    this.rafId = null;
+                }
+            },
+
+            startCountdown(onZero) {
+                if (this.timerId) clearInterval(this.timerId);
+                this.timerId = setInterval(() => {
+                    if (!this.active) return;
+                    this.timeLeft--;
+                    this.updateTimerBar();
+                    if (this.timeLeft <= 0) {
+                        if (onZero) onZero();
+                        else this.completeGame(true);
+                    }
+                }, 1000);
+            },
+
+            updateTimerBar() {
+                const timerEl = document.getElementById('hud-timer');
+                const barEl = document.getElementById('arena-timer-bar');
+                timerEl.textContent = `${Math.max(0, this.timeLeft)}s`;
+                const pct = Math.max(0, Math.min(100, (this.timeLeft / this.initialSeconds) * 100));
+                barEl.style.width = `${pct}%`;
+                if (this.timeLeft <= 10) {
+                    barEl.className = 'h-full bg-rose-500 transition-all duration-300';
+                } else {
+                    barEl.className = 'h-full bg-gradient-to-r from-emerald-500 via-indigo-500 to-blue-500 transition-all duration-300';
+                }
+            },
+
+            updateHUD() {
+                const elapsedMin = Math.max(0.05, (Date.now() - this.startTime) / 60000);
+                const cpm = Math.round(this.hits / elapsedMin);
+                const acc = this.attempts > 0 ? Math.round((this.hits / this.attempts) * 100) : 100;
+
+                document.getElementById('hud-score').textContent = this.score;
+                document.getElementById('hud-cpm').innerHTML = `${cpm} <span class="text-[10px]">CPM</span>`;
+                document.getElementById('hud-accuracy').textContent = `${acc}%`;
+            },
+
+            checkKeyMatch(expectedChar, typedChar) {
+                this.attempts++;
+                const ok = state.config.caseMode === 'lower'
+                    ? expectedChar.toLowerCase() === typedChar.toLowerCase()
+                    : expectedChar === typedChar;
+
+                if (ok) {
+                    this.hits++;
+                    audio.click();
+                    arenaKeyboard.flash(expectedChar, true);
+                } else {
+                    audio.error();
+                    arenaKeyboard.flash(typedChar, false);
+                    const k = expectedChar.toLowerCase();
+                    this.mistakes[k] = (this.mistakes[k] || 0) + 1;
+                }
+                this.updateHUD();
+                return ok;
+            },
+
+            /* -------------------- GIOCO 1: PIOGGIA DI METEORE -------------------- */
+            startGame1() {
+                this.data = {
+                    shields: 5,
+                    combo: 0,
+                    destroyed: 0,
+                    meteors: [],
+                    spawnAcc: 0,
+                    lastTs: performance.now()
+                };
+                document.getElementById('hud-shields').textContent = '❤️❤️❤️❤️❤️';
+
+                const stage = document.getElementById('arena-content');
+                stage.innerHTML = `
+                    <div class="w-full h-full absolute inset-0 flex pointer-events-none opacity-25">
+                        <div class="w-1/3 border-r border-dashed border-emerald-400 flex items-end justify-center pb-2 text-emerald-300 text-[11px] font-extrabold">MANO SINISTRA</div>
+                        <div class="w-1/3 border-r border-dashed border-amber-400 flex items-end justify-center pb-2 text-amber-300 text-[11px] font-extrabold">ZONA CENTRALE</div>
+                        <div class="w-1/3 flex items-end justify-center pb-2 text-sky-300 text-[11px] font-extrabold">MANO DESTRA</div>
+                    </div>
+                    <div id="g1-sky" class="w-full h-[235px] relative overflow-hidden"></div>
+                    <div class="absolute top-3 left-4 bg-slate-800/80 border border-slate-700 px-2.5 py-1 rounded-lg text-xs text-slate-300 font-bold">
+                        Meteore distrutte: <span id="g1-count" class="text-emerald-400 font-mono font-black">0</span>
+                    </div>
+                    <div id="g1-combo" class="absolute top-3 right-4 text-amber-400 font-extrabold text-sm"></div>
+                `;
+
+                this.spawnMeteor();
+                this.startCountdown(() => this.completeGame(true));
+
+                const loop = (now) => {
+                    if (!this.active || this.gameId !== 1) return;
+                    const dt = Math.min(0.1, (now - this.data.lastTs) / 1000);
+                    this.data.lastTs = now;
+
+                    this.data.spawnAcc += dt;
+                    const interval = Math.max(1.0, (2.3 / this.speedMultiplier()) - (this.score * 0.0015));
+                    if (this.data.spawnAcc >= interval) {
+                        this.spawnMeteor();
+                        this.data.spawnAcc = 0;
+                    }
+
+                    const speed = (38 * this.speedMultiplier()) + Math.min(40, this.score * 0.1);
+                    for (let i = this.data.meteors.length - 1; i >= 0; i--) {
+                        const m = this.data.meteors[i];
+                        m.y += speed * dt;
+                        m.el.style.transform = `translate(-50%, ${m.y}px)`;
+
+                        if (m.y >= 215) {
+                            m.el.remove();
+                            this.data.meteors.splice(i, 1);
+                            this.data.shields--;
+                            this.data.combo = 0;
+                            audio.error();
+                            document.getElementById('hud-shields').textContent = '❤️'.repeat(Math.max(0, this.data.shields)) || '💔';
+                            if (this.data.shields <= 0) {
+                                this.completeGame(false);
+                                return;
+                            }
+                        }
+                    }
+
+                    if (this.data.meteors.length > 0) {
+                        const lowest = this.data.meteors.reduce((a, b) => b.y > a.y ? b : a);
+                        arenaKeyboard.highlightTarget(lowest.meta.baseChar);
+                    } else {
+                        arenaKeyboard.highlightTarget(null);
+                    }
+
+                    this.rafId = requestAnimationFrame(loop);
+                };
+                this.rafId = requestAnimationFrame(loop);
+            },
+
+            spawnMeteor() {
+                const sky = document.getElementById('g1-sky');
+                if (!sky) return;
+                const meta = pickRandomKeyMeta();
+                let xPct = 50;
+                if (meta.zone === 'left') xPct = 10 + Math.random() * 20;
+                if (meta.zone === 'center') xPct = 42 + Math.random() * 16;
+                if (meta.zone === 'right') xPct = 70 + Math.random() * 20;
+
+                const el = document.createElement('div');
+                el.className = 'absolute top-0 w-12 h-12 rounded-2xl bg-gradient-to-b from-amber-400 to-orange-600 border-2 border-yellow-200 shadow-lg flex items-center justify-center font-mono font-black text-2xl text-slate-950';
+                el.style.left = `${xPct}%`;
+                el.style.transform = 'translate(-50%, 0px)';
+                el.textContent = meta.displayChar;
+                sky.appendChild(el);
+
+                this.data.meteors.push({ meta, y: 0, el });
+            },
+
+            inputGame1(typed) {
+                const matches = this.data.meteors
+                    .filter(m => state.config.caseMode === 'lower'
+                        ? m.meta.displayChar.toLowerCase() === typed.toLowerCase()
+                        : m.meta.displayChar === typed)
+                    .sort((a, b) => b.y - a.y);
+
+                if (matches.length > 0) {
+                    const target = matches[0];
+                    this.checkKeyMatch(target.meta.displayChar, typed);
+                    target.el.remove();
+                    this.data.meteors = this.data.meteors.filter(m => m !== target);
+
+                    this.data.destroyed++;
+                    this.data.combo++;
+                    this.score += 10 + Math.min(20, this.data.combo * 2);
+                    const cEl = document.getElementById('g1-count');
+                    if (cEl) cEl.textContent = this.data.destroyed;
+                    const cbEl = document.getElementById('g1-combo');
+                    if (cbEl) cbEl.textContent = this.data.combo > 2 ? `🔥 Combo x${this.data.combo}` : '';
+                    this.updateHUD();
+                    if (this.data.meteors.length === 0) this.spawnMeteor();
+                } else {
+                    const exp = this.data.meteors[0]?.meta.displayChar || typed;
+                    this.checkKeyMatch(exp, typed);
+                    this.data.combo = 0;
+                    const cbEl = document.getElementById('g1-combo');
+                    if (cbEl) cbEl.textContent = '';
+                }
+            },
+
+            /* -------------------- GIOCO 2: TASTIERA CIECA -------------------- */
+            startGame2() {
+                this.data = { streak: 0, target: null, mode: 'by_letter' };
+                const stage = document.getElementById('arena-content');
+                stage.innerHTML = `
+                    <div class="text-center space-y-4 max-w-md">
+                        <span id="g2-mode-badge" class="px-3 py-1 rounded-full bg-purple-500/30 border border-purple-400/50 text-purple-200 text-xs font-extrabold uppercase">Memoria Topografica</span>
+                        <div class="bg-slate-800/95 border-2 border-purple-500/60 rounded-3xl p-6 shadow-2xl">
+                            <p id="g2-prompt" class="text-slate-300 text-sm mb-2">Trova il tasto nascosto sulla tastiera:</p>
+                            <div id="g2-big-char" class="font-mono font-black text-6xl text-white my-2">?</div>
+                            <p id="g2-finger-hint" class="text-xs text-purple-300 font-bold mt-2"></p>
+                        </div>
+                    </div>
+                `;
+                this.nextGame2();
+                this.startCountdown(() => this.completeGame(true));
+            },
+
+            nextGame2() {
+                const meta = pickRandomKeyMeta();
+                this.data.target = meta;
+                const radarOnly = this.data.streak >= 3 && Math.random() > 0.45;
+                this.data.mode = radarOnly ? 'by_radar' : 'by_letter';
+
+                const bigChar = document.getElementById('g2-big-char');
+                const prompt = document.getElementById('g2-prompt');
+                const hint = document.getElementById('g2-finger-hint');
+                const badge = document.getElementById('g2-mode-badge');
+
+                if (radarOnly) {
+                    badge.textContent = 'Modalità Radar Cieco';
+                    prompt.textContent = 'Quale lettera si trova sul tasto illuminato in blu?';
+                    bigChar.textContent = '🎯';
+                    arenaKeyboard.highlightTarget(meta.baseChar);
+                } else {
+                    badge.textContent = 'Modalità Memoria';
+                    prompt.textContent = 'Trova e premi questo tasto senza guardare le lettere:';
+                    bigChar.textContent = meta.displayChar;
+                    arenaKeyboard.highlightTarget(null);
+                }
+                hint.textContent = `Suggerimento: ${FINGER_NAMES[meta.finger]}`;
+            },
+
+            inputGame2(typed) {
+                if (!this.data.target) return;
+                if (this.checkKeyMatch(this.data.target.displayChar, typed)) {
+                    this.data.streak++;
+                    this.score += 15 + Math.min(15, this.data.streak);
+                    this.updateHUD();
+                    this.nextGame2();
+                } else {
+                    this.data.streak = 0;
+                    arenaKeyboard.highlightTarget(this.data.target.baseChar);
+                }
+            },
+
+            /* -------------------- GIOCO 3: CORSA DEI ROBOT -------------------- */
+            startGame3() {
+                this.data = {
+                    playerPct: 0,
+                    botPct: 0,
+                    word: '',
+                    idx: 0
+                };
+                const stage = document.getElementById('arena-content');
+                stage.innerHTML = `
+                    <div class="w-full max-w-2xl space-y-5">
+                        <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-4 space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-emerald-400 mb-1">
+                                    <span>🚀 ${getStudentDisplayName()}</span>
+                                    <span id="g3-p-label">0%</span>
+                                </div>
+                                <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                                    <div id="g3-p-bar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-150" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-rose-400 mb-1">
+                                    <span>🤖 Robot IA</span>
+                                    <span id="g3-b-label">0%</span>
+                                </div>
+                                <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                                    <div id="g3-b-bar" class="h-full bg-gradient-to-r from-rose-500 to-orange-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800 border-2 border-emerald-500/50 rounded-3xl p-6 text-center shadow-xl">
+                            <div class="text-xs text-slate-400 uppercase font-bold mb-2">Digita la parola per accelerare</div>
+                            <div id="g3-word-box" class="font-mono font-black text-3xl sm:text-5xl tracking-widest flex justify-center gap-1.5"></div>
+                        </div>
+                    </div>
+                `;
+
+                this.nextWordGame3();
+
+                const botPerSec = (100 / this.initialSeconds) * 0.9 * this.speedMultiplier();
+                this.startCountdown(() => {
+                    this.completeGame(this.data.playerPct >= this.data.botPct);
+                });
+
+                const originalTimer = this.timerId;
+                clearInterval(originalTimer);
+                this.timerId = setInterval(() => {
+                    if (!this.active || this.gameId !== 3) return;
+                    this.timeLeft--;
+                    this.updateTimerBar();
+
+                    this.data.botPct = Math.min(100, this.data.botPct + botPerSec);
+                    const bBar = document.getElementById('g3-b-bar');
+                    const bLbl = document.getElementById('g3-b-label');
+                    if (bBar) bBar.style.width = `${this.data.botPct}%`;
+                    if (bLbl) bLbl.textContent = `${Math.round(this.data.botPct)}%`;
+
+                    if (this.data.botPct >= 100 || this.timeLeft <= 0) {
+                        this.completeGame(this.data.playerPct >= this.data.botPct);
+                    }
+                }, 1000);
+            },
+
+            nextWordGame3() {
+                this.data.word = pickWordOrSequence(3, 6);
+                this.data.idx = 0;
+                this.renderWordGame3();
+            },
+
+            renderWordGame3() {
+                const box = document.getElementById('g3-word-box');
+                if (!box) return;
+                const chars = this.data.word.split('');
+                box.innerHTML = chars.map((c, i) => {
+                    if (i < this.data.idx) return `<span class="text-emerald-400">${c}</span>`;
+                    if (i === this.data.idx) return `<span class="text-white bg-emerald-600 px-2 rounded-xl border-b-4 border-emerald-300">${c}</span>`;
+                    return `<span class="text-slate-400">${c}</span>`;
+                }).join('');
+                arenaKeyboard.highlightTarget(chars[this.data.idx]);
+            },
+
+            inputGame3(typed) {
+                const expected = this.data.word[this.data.idx];
+                if (!expected) return;
+
+                if (this.checkKeyMatch(expected, typed)) {
+                    this.data.idx++;
+                    this.score += 12;
+                    this.data.playerPct = Math.min(100, this.data.playerPct + 3.2);
+
+                    const pBar = document.getElementById('g3-p-bar');
+                    const pLbl = document.getElementById('g3-p-label');
+                    if (pBar) pBar.style.width = `${this.data.playerPct}%`;
+                    if (pLbl) pLbl.textContent = `${Math.round(this.data.playerPct)}%`;
+
+                    if (this.data.playerPct >= 100) {
+                        this.score += 50;
+                        this.updateHUD();
+                        this.completeGame(true);
+                        return;
+                    }
+
+                    if (this.data.idx >= this.data.word.length) {
+                        this.score += 15;
+                        this.nextWordGame3();
+                    } else {
+                        this.renderWordGame3();
+                    }
+                    this.updateHUD();
+                }
+            },
+
+            /* -------------------- GIOCO 4: CATENA RITMICA -------------------- */
+            startGame4() {
+                this.data = { chain: [], idx: 0, completed: 0 };
+                const stage = document.getElementById('arena-content');
+                stage.innerHTML = `
+                    <div class="w-full max-w-2xl text-center space-y-5">
+                        <div class="flex flex-wrap items-center justify-center gap-3 text-xs font-bold">
+                            <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">🟢 Verde = Mano Sinistra</span>
+                            <span class="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40">🔵 Azzurro = Mano Destra</span>
+                        </div>
+                        <div class="bg-slate-800/95 border-2 border-amber-500/50 rounded-3xl p-6 shadow-2xl">
+                            <div id="g4-chain-box" class="flex flex-wrap justify-center gap-2.5 sm:gap-3"></div>
+                        </div>
+                        <div id="g4-counter" class="text-amber-300 font-extrabold text-sm">Catene completate: 0</div>
+                    </div>
+                `;
+                this.buildChainGame4();
+                this.startCountdown(() => this.completeGame(true));
+            },
+
+            buildChainGame4() {
+                const len = 6;
+                this.data.chain = [];
+                this.data.idx = 0;
+                for (let i = 0; i < len; i++) {
+                    this.data.chain.push(pickRandomKeyMeta());
+                }
+                this.renderChainGame4();
+            },
+
+            renderChainGame4() {
+                const box = document.getElementById('g4-chain-box');
+                if (!box) return;
+                box.innerHTML = this.data.chain.map((tile, i) => {
+                    if (i < this.data.idx) {
+                        return '<div class="w-12 h-14 sm:w-14 sm:h-16 rounded-2xl bg-slate-700/50 border-2 border-slate-600 text-slate-500 font-mono font-black text-2xl flex items-center justify-center">✓</div>';
+                    }
+                    const isCurr = i === this.data.idx;
+                    const baseStyle = tile.hand === 'left'
+                        ? 'bg-emerald-600/30 border-emerald-400 text-emerald-100'
+                        : 'bg-sky-600/30 border-sky-400 text-sky-100';
+                    return `<div class="w-12 h-14 sm:w-14 sm:h-16 rounded-2xl border-2 font-mono font-black text-2xl sm:text-3xl flex flex-col items-center justify-center transition ${baseStyle} ${
+                        isCurr ? 'scale-110 ring-4 ring-amber-400 bg-amber-400 text-slate-950 border-white shadow-lg' : 'opacity-80'
+                    }">
+                        <span>${tile.displayChar}</span>
+                        <span class="text-[9px] font-sans font-extrabold uppercase">${tile.hand === 'left' ? 'SX' : 'DX'}</span>
+                    </div>`;
+                }).join('');
+
+                const curr = this.data.chain[this.data.idx];
+                if (curr) arenaKeyboard.highlightTarget(curr.baseChar);
+            },
+
+            inputGame4(typed) {
+                const curr = this.data.chain[this.data.idx];
+                if (!curr) return;
+                if (this.checkKeyMatch(curr.displayChar, typed)) {
+                    this.data.idx++;
+                    this.score += 10;
+                    if (this.data.idx >= this.data.chain.length) {
+                        this.data.completed++;
+                        this.score += 25;
+                        const cnt = document.getElementById('g4-counter');
+                        if (cnt) cnt.textContent = `Catene completate: ${this.data.completed} 🌟`;
+                        this.buildChainGame4();
+                    } else {
+                        this.renderChainGame4();
+                    }
+                    this.updateHUD();
+                }
+            },
+
+            handleKey(rawKey) {
+                if (!this.active || rawKey.length !== 1) return;
+                if (this.gameId === 1) this.inputGame1(rawKey);
+                if (this.gameId === 2) this.inputGame2(rawKey);
+                if (this.gameId === 3) this.inputGame3(rawKey);
+                if (this.gameId === 4) this.inputGame4(rawKey);
+            },
+
+            completeGame(victory) {
+                this.stop();
+                arenaKeyboard.highlightTarget(null);
+                audio.success();
+
+                const elapsedMin = Math.max(0.08, (Date.now() - this.startTime) / 60000);
+                const cpm = Math.round(this.hits / elapsedMin);
+                const wpm = Math.round(cpm / 5);
+                const accuracy = this.attempts > 0 ? Math.round((this.hits / this.attempts) * 100) : 100;
+
+                const sortedMistakes = Object.entries(this.mistakes)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 4)
+                    .map(([k, count]) => `${k.toUpperCase()} (${count})`)
+                    .join(', ') || 'Nessuno';
+
+                const meta = GAMES_CATALOG.find(g => g.id === this.gameId);
+                const studentName = getStudentDisplayName();
+
+                const record = {
+                    timestamp: new Date().toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }),
+                    studentName,
+                    studentClass: state.profile.studentClass,
+                    section: state.profile.section,
+                    game: meta ? meta.name : 'Esercizio',
+                    score: this.score,
+                    cpm,
+                    wpm,
+                    accuracy,
+                    mistakes: sortedMistakes
+                };
+
+                state.reports.unshift(record);
+                persistData();
+
+                // Popola Modale Riepilogo
+                document.getElementById('go-stars').textContent = accuracy >= 90 ? '⭐⭐⭐' : accuracy >= 70 ? '⭐⭐' : '⭐';
+                document.getElementById('go-game-badge').textContent = record.game;
+                document.getElementById('go-title').textContent = victory ? 'Sfida Completata!' : 'Tempo Scaduto!';
+                document.getElementById('go-student-line').textContent = `${record.studentName} • Classe ${record.studentClass} ${record.section}`;
+                document.getElementById('go-score').textContent = record.score;
+                document.getElementById('go-cpm').textContent = `${record.cpm} CPM`;
+                document.getElementById('go-acc').textContent = `${record.accuracy}%`;
+
+                const mBox = document.getElementById('go-mistakes-box');
+                if (sortedMistakes !== 'Nessuno') {
+                    mBox.classList.remove('hidden');
+                    document.getElementById('go-mistakes-text').textContent = sortedMistakes;
+                } else {
+                    mBox.classList.add('hidden');
+                }
+
+                const modal = document.getElementById('modal-gameover');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        };
+
+        /* --------------------------------------------------------------------
+           10. AREA DOCENTE (REPORT CSV/PDF + TESTO COPIA + CONFIGURAZIONE)
+        -------------------------------------------------------------------- */
+        const teacher = {
+            openTab(tabName) {
+                ['reports', 'copytext', 'config', 'pin'].forEach(t => {
+                    const panel = document.getElementById(`teacher-panel-${t}`);
+                    if (panel) panel.classList.toggle('hidden', t !== tabName);
+                    const btn = document.getElementById(`ttab-btn-${t}`);
+                    if (btn) {
+                        if (t === tabName) {
+                            btn.className = 'teacher-tab-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-sm transition';
+                        } else {
+                            btn.className = 'teacher-tab-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition';
+                        }
+                    }
+                });
+                if (tabName === 'reports') this.renderReports();
+                if (tabName === 'copytext') copyTextModule.syncTeacherPanel();
+                if (tabName === 'config') this.renderConfig();
+            },
+
+            getFilteredReports() {
+                const fc = document.getElementById('rep-filter-class').value;
+                const fs = document.getElementById('rep-filter-section').value;
+                const fg = document.getElementById('rep-filter-game').value;
+                const q  = document.getElementById('rep-filter-search').value.trim().toLowerCase();
+
+                return state.reports.filter(r => {
+                    if (fc !== 'ALL' && r.studentClass !== fc) return false;
+                    if (fs !== 'ALL' && r.section !== fs) return false;
+                    if (fg !== 'ALL' && r.game !== fg) return false;
+                    if (q && !r.studentName.toLowerCase().includes(q)) return false;
+                    return true;
+                });
+            },
+
+            renderReports() {
+                const list = this.getFilteredReports();
+                document.getElementById('kpi-sessions').textContent = list.length;
+
+                if (list.length > 0) {
+                    const avgCpm = Math.round(list.reduce((s, r) => s + r.cpm, 0) / list.length);
+                    const avgAcc = Math.round(list.reduce((s, r) => s + r.accuracy, 0) / list.length);
+                    const unique = new Set(list.map(r => `${r.studentName.toLowerCase()}|${r.studentClass}|${r.section}`)).size;
+                    document.getElementById('kpi-cpm').textContent = `${avgCpm} CPM`;
+                    document.getElementById('kpi-acc').textContent = `${avgAcc}%`;
+                    document.getElementById('kpi-students').textContent = unique;
+                } else {
+                    document.getElementById('kpi-cpm').textContent = '0 CPM';
+                    document.getElementById('kpi-acc').textContent = '0%';
+                    document.getElementById('kpi-students').textContent = '0';
+                }
+
+                const tbody = document.getElementById('reports-tbody');
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-10 text-center text-slate-400 font-semibold">Nessun risultato trovato per i filtri selezionati.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map(r => `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3 px-4 text-xs text-slate-500 whitespace-nowrap">${r.timestamp}</td>
+                        <td class="py-3 px-4 font-bold text-slate-900">${r.studentName}</td>
+                        <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-xs">${r.studentClass} ${r.section}</span></td>
+                        <td class="py-3 px-4 text-slate-700 font-medium">${r.game}</td>
+                        <td class="py-3 px-4 font-mono font-bold text-indigo-600">${r.score}</td>
+                        <td class="py-3 px-4 font-mono text-xs font-bold text-emerald-700">${r.cpm} CPM (${r.wpm} WPM)</td>
+                        <td class="py-3 px-4 font-mono font-bold ${r.accuracy >= 85 ? 'text-emerald-600' : 'text-amber-600'}">${r.accuracy}%</td>
+                        <td class="py-3 px-4 font-mono text-xs text-rose-600">${r.mistakes}</td>
+                    </tr>
+                `).join('');
+            },
+
+            exportCSV() {
+                const list = this.getFilteredReports();
+                if (list.length === 0) {
+                    showToast('Nessun dato da scaricare con i filtri attuali.', 'error');
+                    return;
+                }
+                const headers = ['Data e Ora', 'Studente', 'Classe', 'Sezione', 'Attività', 'Punteggio', 'Velocità (CPM)', 'Velocità (WPM)', 'Precisione (%)', 'Tasti da Ripassare'];
+                const rows = list.map(r => [
+                    `"${r.timestamp}"`,
+                    `"${r.studentName.replace(/"/g, '""')}"`,
+                    `"${r.studentClass}"`,
+                    `"${r.section}"`,
+                    `"${r.game}"`,
+                    r.score,
+                    r.cpm,
+                    r.wpm,
+                    r.accuracy,
+                    `"${r.mistakes}"`
+                ]);
+                const csv = '\uFEFF' + [headers.join(';'), ...rows.map(row => row.join(';'))].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Report_DattiloLab_${new Date().toISOString().slice(0, 10)}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('Report CSV scaricato!', 'success');
+            },
+
+            renderConfig() {
+                document.querySelectorAll('.cfg-case-btn').forEach(btn => {
+                    const active = btn.dataset.case === state.config.caseMode;
+                    btn.className = active
+                        ? 'cfg-case-btn py-2.5 px-2 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold text-xs shadow-sm transition'
+                        : 'cfg-case-btn py-2.5 px-2 rounded-xl border-2 border-slate-200 bg-white text-slate-700 hover:border-indigo-300 font-bold text-xs transition';
+                });
+
+                document.querySelectorAll('.cfg-diff-btn').forEach(btn => {
+                    const active = btn.dataset.diff === state.config.difficulty;
+                    btn.className = active
+                        ? 'cfg-diff-btn py-2.5 px-2 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold text-xs shadow-sm transition'
+                        : 'cfg-diff-btn py-2.5 px-2 rounded-xl border-2 border-slate-200 bg-white text-slate-700 hover:border-indigo-300 font-bold text-xs transition';
+                });
+
+                [1, 2, 3, 4].forEach(id => {
+                    const inp = document.getElementById(`cfg-timer-${id}`);
+                    if (inp) inp.value = state.config.timers[id] || 60;
+                });
+
+                document.getElementById('cfg-custom-words').value = state.config.customWords.join(', ');
+                this.renderTeacherKeyboard();
+            },
+
+            renderTeacherKeyboard() {
+                const container = document.getElementById('cfg-teacher-keyboard');
+                if (!container) return;
+                container.innerHTML = '';
+                const activeSet = new Set(state.config.activeKeys);
+                document.getElementById('cfg-active-keys-badge').textContent = `${activeSet.size} tasti attivi`;
+
+                KEYBOARD_ROWS.forEach((row, rIdx) => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = `flex justify-center gap-1.5 ${rIdx === 1 ? 'pl-4' : rIdx === 2 ? 'pl-8' : ''}`;
+
+                    row.forEach(item => {
+                        const active = activeSet.has(item.key);
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = `w-9 h-10 sm:w-11 sm:h-11 rounded-xl border-2 font-mono font-extrabold text-sm sm:text-base transition ${
+                            active ? `finger-${item.finger} shadow-sm` : 'bg-slate-200 border-slate-300 text-slate-400 opacity-55'
+                        }`;
+                        btn.textContent = state.config.caseMode === 'upper' ? item.key.toUpperCase() : item.key;
+                        btn.addEventListener('click', () => {
+                            const set = new Set(state.config.activeKeys);
+                            if (set.has(item.key)) {
+                                if (set.size <= 2) {
+                                    showToast('Mantieni almeno 2 tasti attivi!', 'error');
+                                    return;
+                                }
+                                set.delete(item.key);
+                            } else {
+                                set.add(item.key);
+                            }
+                            state.config.activeKeys = Array.from(set);
+                            persistData();
+                            updateProfileBadges();
+                            this.renderTeacherKeyboard();
+                        });
+                        rowDiv.appendChild(btn);
+                    });
+
+                    container.appendChild(rowDiv);
+                });
+            },
+
+            applyKeyPreset(preset) {
+                const map = {
+                    home_row:    ['a', 's', 'd', 'f', 'j', 'k', 'l', 'ò'],
+                    home_top:    ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ò'],
+                    all_letters: 'abcdefghijklmnopqrstuvwxyz'.split(''),
+                    all_italian: 'abcdefghijklmnopqrstuvwxyzèòàùì'.split(''),
+                    left_hand:   ['q', 'w', 'e', 'r', 't', 'a', 's', 'd', 'f', 'g', 'z', 'x', 'c', 'v', 'b'],
+                    right_hand:  ['y', 'u', 'i', 'o', 'p', 'h', 'j', 'k', 'l', 'ò', 'n', 'm']
+                };
+                if (map[preset]) {
+                    state.config.activeKeys = [...map[preset]];
+                    persistData();
+                    updateProfileBadges();
+                    this.renderTeacherKeyboard();
+                    showToast('Tasti aggiornati!', 'success');
+                }
+            }
+        };
+
+        /* --------------------------------------------------------------------
+           11. COLLEGAMENTO PULITO DEGLI EVENT LISTENER
+        -------------------------------------------------------------------- */
+        function bindAllEvents() {
+            // Navigazione principale
+            document.querySelectorAll('[data-nav]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchView(btn.getAttribute('data-nav'));
+                });
+            });
+
+            // Input Nome Studente + Tasto Invio
+            const nameInput = document.getElementById('student-name-input');
+            nameInput.addEventListener('input', () => {
+                state.profile.name = nameInput.value;
+                persistData();
+                updateProfileBadges();
+            });
+            nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    switchView('games');
+                }
+            });
+
+            // Pulsanti Classe (1^, 2^, 3^)
+            document.querySelectorAll('.class-choice-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.profile.studentClass = btn.dataset.class;
+                    persistData();
+                    syncProfileControls();
+                    updateProfileBadges();
+                });
+            });
+
+            // Pulsanti Sezione (A - G)
+            document.querySelectorAll('.section-choice-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.profile.section = btn.dataset.section;
+                    persistData();
+                    syncProfileControls();
+                    updateProfileBadges();
+                });
+            });
+
+            // Pulsanti Rapidi nella Home Profilo
+            document.getElementById('btn-go-tutorial').addEventListener('click', () => switchView('tutorial'));
+            document.getElementById('btn-go-games').addEventListener('click', () => switchView('games'));
+            document.getElementById('btn-go-copytext').addEventListener('click', () => switchView('copytext'));
+
+            // Eventi Area Docente per Copia Testo (Caricamento File, Impostazioni e Download)
+            const ctSourceArea = document.getElementById('ct-source-textarea');
+            const ctTitleInput = document.getElementById('ct-title-input');
+            const ctFileInput = document.getElementById('ct-file-input');
+
+            ctSourceArea.addEventListener('input', () => copyTextModule.updateCharCounter());
+
+            document.getElementById('btn-ct-apply').addEventListener('click', () => {
+                copyTextModule.saveFromTeacher(true);
+            });
+
+            document.getElementById('btn-ct-apply-and-go').addEventListener('click', () => {
+                if (copyTextModule.saveFromTeacher(false)) {
+                    switchView('copytext');
+                }
+            });
+
+            document.getElementById('btn-ct-sample').addEventListener('click', () => {
+                const samples = [
+                    {
+                        title: 'La Tastiera e la Postura',
+                        text: 'Scrivere al computer senza guardare i tasti è un superpotere utile a scuola e nella vita. Appoggia gli indici su F e J e mantieni un ritmo regolare.'
+                    },
+                    {
+                        title: 'Un Viaggio tra le Stelle',
+                        text: 'Il sistema solare comprende otto pianeti che orbitano intorno al Sole. La Terra è il terzo pianeta in ordine di distanza ed è l\'unico finora noto ad ospitare la vita.'
+                    },
+                    {
+                        title: 'Allenamento di Precisione',
+                        text: 'La velocità arriva da sola quando impari a non commettere errori: leggi sempre due parole in anticipo rispetto a ciò che stai digitando.'
+                    }
+                ];
+                const pick = samples[Math.floor(Math.random() * samples.length)];
+                ctTitleInput.value = pick.title;
+                ctSourceArea.value = pick.text;
+                copyTextModule.updateCharCounter();
+                copyTextModule.saveFromTeacher(true);
+            });
+
+            document.getElementById('btn-ct-clear').addEventListener('click', () => {
+                ctTitleInput.value = '';
+                ctSourceArea.value = '';
+                copyTextModule.updateCharCounter();
+                ctSourceArea.focus();
+            });
+
+            document.getElementById('btn-ct-export-json').addEventListener('click', () => {
+                copyTextModule.exportExerciseToJSON();
+            });
+
+            document.getElementById('btn-ct-import-file').addEventListener('click', () => {
+                ctFileInput.value = '';
+                ctFileInput.click();
+            });
+
+            ctFileInput.addEventListener('change', (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (file) copyTextModule.importExerciseFromFile(file);
+            });
+
+            document.getElementById('btn-ct-download-submission-txt').addEventListener('click', () => {
+                copyTextModule.downloadStudentSubmission('txt');
+            });
+
+            document.getElementById('btn-ct-download-submission-json').addEventListener('click', () => {
+                copyTextModule.downloadStudentSubmission('json');
+            });
+
+            // Eventi Area Studente (Solo digitazione e riavvio tentativo)
+            document.getElementById('ct-student-input').addEventListener('input', () => {
+                copyTextModule.handleStudentInput();
+            });
+
+            document.getElementById('btn-ct-restart-typing').addEventListener('click', () => {
+                copyTextModule.resetAttempt(true);
+            });
+
+            document.getElementById('btn-ct-repeat-after-win').addEventListener('click', () => {
+                copyTextModule.resetAttempt(true);
+            });
+
+            // Avvio dei 4 Giochi (Event Delegation su tutta la pagina)
+            document.body.addEventListener('click', (e) => {
+                const launchBtn = e.target.closest('[data-launch-game]');
+                if (launchBtn) {
+                    const gameId = parseInt(launchBtn.getAttribute('data-launch-game'), 10);
+                    if (gameId >= 1 && gameId <= 4) {
+                        audio.ensure();
+                        switchView('arena');
+                        engine.launch(gameId);
+                    }
+                }
+
+                const warmupTile = e.target.closest('[data-warmup-char]');
+                if (warmupTile) {
+                    tutorial.handleInput(warmupTile.getAttribute('data-warmup-char'));
+                }
+            });
+
+            // Pulsante Audio
+            document.getElementById('btn-toggle-audio').addEventListener('click', () => {
+                audio.muted = !audio.muted;
+                document.getElementById('audio-icon').textContent = audio.muted ? '🔇' : '🔊';
+                showToast(audio.muted ? 'Audio disattivato' : 'Audio attivato');
+            });
+
+            // Controlli Tutorial
+            document.querySelectorAll('.tut-finger-card').forEach(card => {
+                card.addEventListener('click', () => tutorial.selectFinger(card.dataset.finger));
+                card.addEventListener('mouseenter', () => tutorial.selectFinger(card.dataset.finger));
+            });
+            document.getElementById('btn-tut-reset-filter').addEventListener('click', () => tutorial.clearFilter());
+            document.getElementById('btn-tut-new-warmup').addEventListener('click', () => tutorial.newWarmup());
+
+            // Controlli Arena & Modale Fine Partita
+            document.getElementById('btn-exit-arena').addEventListener('click', () => switchView('games'));
+            document.getElementById('btn-go-menu').addEventListener('click', () => {
+                document.getElementById('modal-gameover').classList.add('hidden');
+                document.getElementById('modal-gameover').classList.remove('flex');
+                switchView('games');
+            });
+            document.getElementById('btn-go-replay').addEventListener('click', () => {
+                document.getElementById('modal-gameover').classList.add('hidden');
+                document.getElementById('modal-gameover').classList.remove('flex');
+                if (state.activeGameId) engine.launch(state.activeGameId);
+            });
+
+            // Modale PIN Docente
+            const pinModal = document.getElementById('modal-pin');
+            const pinInput = document.getElementById('modal-pin-input');
+            document.getElementById('btn-open-teacher').addEventListener('click', () => {
+                document.getElementById('modal-pin-error').classList.add('hidden');
+                pinInput.value = '';
+                pinModal.classList.remove('hidden');
+                pinModal.classList.add('flex');
+                setTimeout(() => pinInput.focus(), 60);
+            });
+            document.getElementById('btn-pin-cancel').addEventListener('click', () => {
+                pinModal.classList.add('hidden');
+                pinModal.classList.remove('flex');
+            });
+            const verifyPin = () => {
+                if (pinInput.value.trim() === state.pin) {
+                    pinModal.classList.add('hidden');
+                    pinModal.classList.remove('flex');
+                    switchView('teacher');
+                    showToast('Accesso Area Docente effettuato!', 'success');
+                } else {
+                    document.getElementById('modal-pin-error').classList.remove('hidden');
+                    audio.error();
+                }
+            };
+            document.getElementById('btn-pin-submit').addEventListener('click', verifyPin);
+            pinInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') verifyPin();
+            });
+
+            // Tabs & Controlli Area Docente
+            document.querySelectorAll('.teacher-tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => teacher.openTab(btn.dataset.teacherTab));
+            });
+
+            ['rep-filter-class', 'rep-filter-section', 'rep-filter-game'].forEach(id => {
+                document.getElementById(id).addEventListener('change', () => teacher.renderReports());
+            });
+            document.getElementById('rep-filter-search').addEventListener('input', () => teacher.renderReports());
+            document.getElementById('btn-export-csv').addEventListener('click', () => teacher.exportCSV());
+            document.getElementById('btn-print-report').addEventListener('click', () => window.print());
+            document.getElementById('btn-clear-reports').addEventListener('click', () => {
+                askConfirm('Svuotare il registro?', 'Tutti i punteggi salvati degli studenti verranno eliminati.', () => {
+                    state.reports = [];
+                    persistData();
+                    teacher.renderReports();
+                    showToast('Registro svuotato.');
+                });
+            });
+
+            // Configurazione Esercizi Docente
+            document.querySelectorAll('.cfg-case-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.config.caseMode = btn.dataset.case;
+                    persistData();
+                    updateProfileBadges();
+                    teacher.renderConfig();
+                });
+            });
+            document.querySelectorAll('.cfg-diff-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.config.difficulty = btn.dataset.diff;
+                    persistData();
+                    updateProfileBadges();
+                    teacher.renderConfig();
+                });
+            });
+            document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const sec = parseInt(btn.dataset.presetSec, 10);
+                    [1, 2, 3, 4].forEach(id => { state.config.timers[id] = sec; });
+                    persistData();
+                    teacher.renderConfig();
+                    renderGameCardsInto('quick-games-grid', true);
+                    showToast(`Timer impostati a ${sec}s per tutti i giochi!`, 'success');
+                });
+            });
+            document.querySelectorAll('.cfg-timer-input').forEach(inp => {
+                inp.addEventListener('change', () => {
+                    const gId = parseInt(inp.dataset.gameTimer, 10);
+                    let val = parseInt(inp.value, 10);
+                    if (isNaN(val)) val = 60;
+                    val = Math.max(15, Math.min(300, val));
+                    inp.value = val;
+                    state.config.timers[gId] = val;
+                    persistData();
+                    renderGameCardsInto('quick-games-grid', true);
+                });
+            });
+            document.querySelectorAll('.key-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => teacher.applyKeyPreset(btn.dataset.keyPreset));
+            });
+            document.getElementById('btn-cfg-save').addEventListener('click', () => {
+                const rawWords = document.getElementById('cfg-custom-words').value;
+                state.config.customWords = rawWords.split(',').map(w => w.trim()).filter(w => w.length >= 2);
+                persistData();
+                updateProfileBadges();
+                renderGameCardsInto('quick-games-grid', true);
+                showToast('Impostazioni salvate correttamente!', 'success');
+            });
+            document.getElementById('btn-cfg-reset').addEventListener('click', () => {
+                askConfirm('Ripristinare default?', 'Verranno ripristinati tasti A-Z, solo minuscolo, velocità lenta e timer a 60s.', () => {
+                    state.config = {
+                        caseMode: 'lower',
+                        difficulty: 'easy',
+                        activeKeys: [...DEFAULT_KEYS],
+                        customWords: [],
+                        timers: { 1: 60, 2: 60, 3: 60, 4: 60 }
+                    };
+                    persistData();
+                    updateProfileBadges();
+                    teacher.renderConfig();
+                    renderGameCardsInto('quick-games-grid', true);
+                    showToast('Impostazioni predefinite ripristinate!');
+                });
+            });
+            document.getElementById('btn-save-pin').addEventListener('click', () => {
+                const val = document.getElementById('cfg-new-pin').value.trim();
+                if (!/^\d{4,6}$/.test(val)) {
+                    showToast('Inserisci un PIN numerico da 4 a 6 cifre.', 'error');
+                    return;
+                }
+                state.pin = val;
+                persistData();
+                document.getElementById('cfg-new-pin').value = '';
+                showToast('PIN Docente aggiornato!', 'success');
+            });
+
+            // Modale Conferma
+            document.getElementById('btn-confirm-no').addEventListener('click', closeConfirm);
+            document.getElementById('btn-confirm-yes').addEventListener('click', () => {
+                if (typeof confirmAction === 'function') confirmAction();
+                closeConfirm();
+            });
+
+            // Listener Globale Tastiera Fisica (sia nei 4 Giochi che nel Tutorial)
+            window.addEventListener('keydown', (e) => {
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+
+                if (state.currentView === 'arena' && engine.active) {
+                    if (e.key === ' ' || e.key === 'Tab') e.preventDefault();
+                    engine.handleKey(e.key);
+                } else if (state.currentView === 'tutorial') {
+                    if (e.key === ' ') e.preventDefault();
+                    if (e.key.length === 1) tutorial.handleInput(e.key);
+                }
+            });
+        }
+
+        function syncProfileControls() {
+            document.getElementById('student-name-input').value = state.profile.name;
+
+            document.querySelectorAll('.class-choice-btn').forEach(btn => {
+                const active = btn.dataset.class === state.profile.studentClass;
+                btn.className = active
+                    ? 'class-choice-btn py-3 rounded-xl font-black text-sm border-2 border-indigo-600 bg-indigo-600 text-white shadow-sm transition'
+                    : 'class-choice-btn py-3 rounded-xl font-black text-sm border-2 border-slate-300 bg-white text-slate-700 hover:border-indigo-400 transition';
+            });
+
+            document.querySelectorAll('.section-choice-btn').forEach(btn => {
+                const active = btn.dataset.section === state.profile.section;
+                btn.className = active
+                    ? 'section-choice-btn py-3 rounded-xl font-black text-xs sm:text-sm border-2 border-indigo-600 bg-indigo-600 text-white shadow-sm transition'
+                    : 'section-choice-btn py-3 rounded-xl font-black text-xs sm:text-sm border-2 border-slate-300 bg-white text-slate-700 hover:border-indigo-400 transition';
+            });
+        }
+
+        /* --------------------------------------------------------------------
+           12. INIZIALIZZAZIONE IMMEDIATA
+        -------------------------------------------------------------------- */
+        loadSavedData();
+        syncProfileControls();
+        updateProfileBadges();
+        renderGameCardsInto('quick-games-grid', true);
+        bindAllEvents();
+    });
+    </script>
+</body>
+</html>
